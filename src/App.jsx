@@ -317,12 +317,21 @@ const filteredManage=[
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8,paddingBottom:20}}>
-            {filtered.map(item=>(
+
+           {filteredManage.map((item, idx)=>{
+  const prevItem = filteredManage[idx-1];
+  const showDivider = idx>0 && item.active!=="Yes" && prevItem?.active==="Yes";
+  return(<>
+  {showDivider && (
+    <div key="divider" style={{textAlign:"center",padding:"10px 0",fontSize:12,fontWeight:700,color:"#9ca3af",letterSpacing:1,borderTop:"2px dashed #e5e7eb",marginTop:4}}>
+      ↓ INACTIVE ITEMS ↓
+    </div>
+  )}
               <div key={item.id} style={{...s.mCard,opacity:item.active==="No"?0.6:1}}>
                 <div style={s.mTop}>
                   <div style={s.fg}>
                     <div style={s.fl}>Order #</div>
-                    {isEditing(item.id,"storeOrder")?<EditCell value={item.storeOrder} type="number" width={55} onSave={v=>updateField(item.id,"storeOrder",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeOrder"})}>{item.storeOrder}</span>}
+                    {isEditing(item.id,"storeOrder")?<EditCell value={item.storeOrder} type="number" width={55} onSave={v=>updateField(item.id,"storeOrder",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeOrder"</>);})}>{item.storeOrder}</span>}
                   </div>
                   <div style={{...s.fg,flex:1}}>
                     <div style={s.fl}>Item Name</div>
