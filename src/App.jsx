@@ -134,23 +134,25 @@ function escapeHtml(value){
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
- 
+
 function EditCell({value,onSave,type="text",options=null,width=100}){
   const [v,setV]=useState(String(value??""));
   const ref=useRef();
-  useEffect(()=>{ref.current?.focus();ref.current?.select();},[]);
-  const commit=()=>onSave(type==="number"?(parseFloat(v)||0):v);
-if(options)return(
-  <select ref={ref} value={v} style={{...s.inlineInput,width}} onChange={e=>{setV(e.target.value);onSave(e.target.value);}} onBlur={commit}>
-    {!options.includes(v) && <option value={v}>{v||"—"}</option>}
-    {options.map(o=><option key={o} value={o}>{o}</option>)}
-  </select>
-);
-
-
- 
+  useEffect(()=>{try{ref.current?.focus();ref.current?.select();}catch(e){}},[]);
+  const commit=()=>{try{onSave(type==="number"?(parseFloat(v)||0):v);}catch(e){}};
+  if(options){
+    const allOptions = options.includes(v) ? options : [v, ...options];
+    return(
+      <select ref={ref} value={v} style={{...s.inlineInput,width}}
+        onChange={e=>{setV(e.target.value);onSave(e.target.value);}}
+        onBlur={commit}>
+        {allOptions.map(o=><option key={o} value={o}>{o||"—"}</option>)}
+      </select>
+    );
+  }
   return(<input ref={ref} value={v} type={type==="number"?"number":"text"} style={{...s.inlineInput,width}} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")onSave(null);}}/>);
 }
+
  
 export default function App(){
   const [items,setItems]=useState(SOURCE_ITEMS);
