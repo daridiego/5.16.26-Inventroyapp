@@ -175,7 +175,7 @@ export default function App(){
   return(
     <div style={s.app}>
       <div style={s.header}>
-        <div style={s.hL}><span style={{fontSize:24}}>🍽️</span><div><div style={s.title}>Inventory</div><div style={s.sub}>{date}</div></div></div>
+        <div style={s.hL}><span style={{fontSize:24}}>🍽️</span><div><div style={s.title}>Rio Bravito Inventory</div><div style={s.sub}>{date}</div></div></div>
         <div style={s.hR}>{saved&&<span style={s.savedBadge}>✓ Saved</span>}<div style={s.prog}><div style={s.progBar}><div style={{...s.progFill,width:`${items.length?(countedCount/items.length)*100:0}%`}}/></div><span style={s.progLbl}>{countedCount}/{items.length}</span></div></div>
       </div>
  
