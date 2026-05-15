@@ -213,14 +213,20 @@ useEffect(() => {
   const addItem=()=>{const item={id:uid(),storeOrder:items.length+1,storeLocationNum:0,name:"New Item",location:LOCATIONS[0]||"Other",category:"",unit:"each",par:0,reorder:0,notes:"",frequency:1,active:"Yes",vendor:"Restaurant Depot"};persist([...items,item],counts);};
  
   const sorted=[...items].sort((a,b)=>a.storeOrder-b.storeOrder);
-  const filtered=sorted.filter(item=>{
+
+  // WITH THIS:
+const filtered=sorted.filter(item=>{
     if(search&&!item.name.toLowerCase().includes(search.toLowerCase()))return false;
     if(filterLoc!=="All"&&item.location!==filterLoc)return false;
-    if(filterActive==="Active"&&item.active!=="Yes")return false;
-    if(filterActive==="Inactive"&&item.active==="Yes")return false;
     if(countedOnly&&(counts[item.id]===undefined||counts[item.id]===""))return false;
     return true;
   });
+
+const filteredManage=[
+    ...filtered.filter(i=>i.active==="Yes"),
+    ...filtered.filter(i=>i.active!=="Yes"),
+  ];
+ 
  
   const countedCount=Object.values(counts).filter(v=>v!=="").length;
   const orderItems=sorted.filter(i=>i.active==="Yes").map(i=>({...i,count:counts[i.id]??"",toOrder:needToOrder(i,counts[i.id]??"")})).filter(i=>i.toOrder>0);
@@ -257,7 +263,15 @@ useEffect(() => {
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {filtered.map(item=>{
+            {filteredManage.map((item, idx)=>{
+  const prevItem = filteredManage[idx-1];
+  const showDivider = idx>0 && item.active!=="Yes" && prevItem?.active==="Yes";
+  return(<>
+  {showDivider && (
+    <div key="divider" style={{textAlign:"center",padding:"10px 0",fontSize:12,fontWeight:700,color:"#9ca3af",letterSpacing:1,borderTop:"2px dashed #e5e7eb",marginTop:4}}>
+      ↓ INACTIVE ITEMS ↓
+    </div>
+  )}
               const val=counts[item.id]??"";
               const st=statusOf(val,item.par,item.reorder);
               return(
@@ -281,7 +295,7 @@ useEffect(() => {
                   {val!==""&&parseFloat(val)<=(item.reorder||0)&&<div style={s.alertB}>⚠️ Below reorder point — need {needToOrder(item,val)} {item.unit}</div>}
                 </div>
               );
-            })}
+           </>);})}
             {filtered.length===0&&<div style={s.empty}>No items match your filters.</div>}
           </div>
           <div style={s.fab}>
