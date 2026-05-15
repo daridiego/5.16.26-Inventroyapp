@@ -213,14 +213,18 @@ useEffect(() => {
   const addItem=()=>{const item={id:uid(),storeOrder:items.length+1,storeLocationNum:0,name:"New Item",location:LOCATIONS[0]||"Other",category:"",unit:"each",par:0,reorder:0,notes:"",frequency:1,active:"Yes",vendor:"Restaurant Depot"};persist([...items,item],counts);};
  
   const sorted=[...items].sort((a,b)=>a.storeOrder-b.storeOrder);
-  const filtered=sorted.filter(item=>{
+  // WITH THIS:
+const filtered=sorted.filter(item=>{
     if(search&&!item.name.toLowerCase().includes(search.toLowerCase()))return false;
     if(filterLoc!=="All"&&item.location!==filterLoc)return false;
-    if(filterActive==="Active"&&item.active!=="Yes")return false;
-    if(filterActive==="Inactive"&&item.active==="Yes")return false;
     if(countedOnly&&(counts[item.id]===undefined||counts[item.id]===""))return false;
     return true;
   });
+
+const filteredManage=[
+    ...filtered.filter(i=>i.active==="Yes"),
+    ...filtered.filter(i=>i.active!=="Yes"),
+  ];
  
   const countedCount=Object.values(counts).filter(v=>v!=="").length;
   const orderItems=sorted.filter(i=>i.active==="Yes").map(i=>({...i,count:counts[i.id]??"",toOrder:needToOrder(i,counts[i.id]??"")})).filter(i=>i.toOrder>0);
