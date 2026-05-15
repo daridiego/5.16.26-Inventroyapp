@@ -1,35 +1,59 @@
 const STORAGE_KEY = "resto-inv-v3";
-const SHARE_PARAM = "inv";
 
-function parseSharedData() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get(SHARE_PARAM);
-    if (!encoded) return null;
-    const json = atob(encoded);
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
+const DB_URL = import.meta.env.VITE_INVENTORY_DB_URL;
+const DB_AUTH_TOKEN = import.meta.env.VITE_INVENTORY_DB_AUTH_TOKEN;
+
+function hasDatabaseConfig() {
+  return typeof DB_URL === "string" && DB_URL.trim().length > 0;
 }
 
-function writeSharedData(data) {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    params.set(SHARE_PARAM, btoa(JSON.stringify(data)));
-    const query = params.toString();
-    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
-    window.history.replaceState({}, "", nextUrl);
-    return true;
-  } catch {
-    return false;
+function buildHeaders() {
+  const headers = { "Content-Type": "application/json" };
+
+  if (DB_AUTH_TOKEN) {
+    headers.Authorization = `Bearer ${DB_AUTH_TOKEN}`;
   }
+
+  return headers;
 }
 
-export async function loadInventoryData() {
-  const sharedData = parseSharedData();
-  if (sharedData) return sharedData;
+async function loadFromDatabase() {
+  if (!hasDatabaseConfig()) return null;
 
+  const response = await fetch(DB_URL, {
+    method: "GET",
+    headers: buildHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Database load failed (${response.status})`);
+  }
+
+  const payload = await response.json();
+
+  if (!payload || typeof payload !== "object") return null;
+
+  // Supports direct payload shape ({items, counts}) or wrapped shape ({data: {items, counts}})
+  return payload.data && typeof payload.data === "object" ? payload.data : payload;
+}
+
+async function saveToDatabase(data) {
+  if (!hasDatabaseConfig()) return false;
+
+  const response = await fetch(DB_URL, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Database save failed (${response.status})`);
+  }
+
+  return true;
+}
+
+function loadFromLocalStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -38,15 +62,37 @@ export async function loadInventoryData() {
   }
 }
 
-export async function saveInventoryData(data) {
-  let saved = false;
-
+function saveToLocalStorage(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    saved = true;
+    return true;
   } catch {
-    // ignore localStorage failures and still try to persist in URL
+    return false;
+  }
+}
+
+export async function loadInventoryData() {
+  try {
+    const fromDb = await loadFromDatabase();
+    if (fromDb) {
+      saveToLocalStorage(fromDb);
+      return fromDb;
+    }
+  } catch {
+    // Fall back to localStorage if DB is unavailable.
   }
 
-  return writeSharedData(data) || saved;
+  return loadFromLocalStorage();
+}
+
+export async function saveInventoryData(data) {
+  const localSaved = saveToLocalStorage(data);
+
+  try {
+    const dbSaved = await saveToDatabase(data);
+    return dbSaved || localSaved;
+  } catch {
+    // If DB fails, keep app usable with local persistence.
+    return localSaved;
+  }
 }
