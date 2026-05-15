@@ -139,12 +139,40 @@ export default function App(){
   const [saved,setSaved]=useState(false);
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
  
-  useEffect(() => {
-    loadInventoryData().then((d) => {
-      if (d?.items) setItems(d.items);
-      if (d?.counts) setCounts(d.counts);
-    });
-  }, []);
+useEffect(() => {
+  loadInventoryData().then((d) => {
+    if (d?.counts) setCounts(d.counts);
+    if (d?.items && d.items.length > 0) {
+      // Build a map of saved items by id so we can merge editable fields back
+      const savedById = Object.fromEntries(d.items.map(i => [i.id, i]));
+      // Start from SOURCE_ITEMS so hardcoded items always appear,
+      // then overlay any saved edits (par, reorder, notes, location, etc.)
+      const merged = SOURCE_ITEMS.map(item => {
+        const saved = savedById[item.id];
+        if (!saved) return item;
+        // Merge only editable fields — not name/id which come from source
+        return {
+          ...item,
+          par: saved.par ?? item.par,
+          reorder: saved.reorder ?? item.reorder,
+          notes: saved.notes ?? item.notes,
+          location: saved.location ?? item.location,
+          category: saved.category ?? item.category,
+          unit: saved.unit ?? item.unit,
+          active: saved.active ?? item.active,
+          vendor: saved.vendor ?? item.vendor,
+          storeOrder: saved.storeOrder ?? item.storeOrder,
+          storeLocationNum: saved.storeLocationNum ?? item.storeLocationNum,
+          frequency: saved.frequency ?? item.frequency,
+        };
+      });
+      // Also keep any items that were added via the app (not in SOURCE_ITEMS)
+      const sourceIds = new Set(SOURCE_ITEMS.map(i => i.id));
+      const addedItems = d.items.filter(i => !sourceIds.has(i.id));
+      setItems([...merged, ...addedItems]);
+    }
+  });
+}, []);
 
 
  
