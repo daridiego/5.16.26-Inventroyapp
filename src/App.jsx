@@ -140,7 +140,15 @@ function EditCell({value,onSave,type="text",options=null,width=100}){
   const ref=useRef();
   useEffect(()=>{ref.current?.focus();ref.current?.select();},[]);
   const commit=()=>onSave(type==="number"?(parseFloat(v)||0):v);
-  if(options)return(<select ref={ref} value={v} style={{...s.inlineInput,width}} onChange={e=>{setV(e.target.value);onSave(e.target.value);}} onBlur={commit}>{options.map(o=><option key={o} value={o}>{o}</option>)}</select>);
+if(options)return(
+  <select ref={ref} value={v} style={{...s.inlineInput,width}} onChange={e=>{setV(e.target.value);onSave(e.target.value);}} onBlur={commit}>
+    {!options.includes(v) && <option value={v}>{v||"—"}</option>}
+    {options.map(o=><option key={o} value={o}>{o}</option>)}
+  </select>
+);
+
+
+ 
   return(<input ref={ref} value={v} type={type==="number"?"number":"text"} style={{...s.inlineInput,width}} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")onSave(null);}}/>);
 }
  
