@@ -168,9 +168,9 @@ export default function App(){
   const [saved,setSaved]=useState(false);
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
  
-useEffect(() => {
+  useEffect(() => {
   loadInventoryData().then((d) => {
-    if (d?.counts) setCounts(d.counts);
+    // counts intentionally NOT restored — reset to blank each session
     if (d?.items && d.items.length > 0) {
       // Build a map of saved items by id so we can merge editable fields back
       const savedById = Object.fromEntries(d.items.map(i => [i.id, i]));
