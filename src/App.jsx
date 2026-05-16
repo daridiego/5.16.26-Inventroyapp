@@ -46,7 +46,7 @@ const SC={critical:"#ef4444",low:"#f59e0b",good:"#22c55e",neutral:"#d1d5db"};
 
 function exportToExcel(items,counts){
   const rows=[...items].sort((a,b)=>a.storeOrder-b.storeOrder).map(item=>({
-    "Location #":item.storeOrder,"Store SKU":item.storeLocationNum,"Item Name":item.name,
+    "Location #":item.storeOrder,"Store Location Code":item.storeLocationNum,"Item Name":item.name,
     "In-House Location":item.location,"Category":item.category,"Unit":item.unit,
     "To Have (Par)":item.par||"","Reorder Point":item.reorder||"",
     "On Hand (Last Count)":counts[item.id]!==undefined?counts[item.id]:"",
@@ -227,7 +227,7 @@ const filteredManage=[
   ];
  
   const countedCount=Object.values(counts).filter(v=>v!=="").length;
-  const orderItems=sorted.filter(i=>i.active==="Yes").map(i=>({...i,count:counts[i.id]??"",toOrder:needToOrder(i,counts[i.id]??"")})).filter(i=>i.toOrder>0);
+  const orderItems=sorted.filter(i=>i.active==="Yes").map(i=>({...i,count:counts[i.id]??"",toOrder:needToOrder(i,counts[i.id]??"")})).filter(i=>i.toOrder>0).sort((a,b)=>a.storeLocationNum-b.storeLocationNum);
   const isEditing=(id,field)=>editingCell?.itemId===id&&editingCell?.field===field;
  
   function handlePO(){setGenerating(true);setPoHTML(null);try{const h=generatePO(orderItems,date);setPoHTML(h);setView("order");}catch{alert("Failed, try again.");}setGenerating(false);}
