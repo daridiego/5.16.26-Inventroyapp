@@ -317,7 +317,7 @@ const filteredManage=[
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8,paddingBottom:20}}>
-            {filtered.map(item=>(
+            {filteredManage.map(item=>(
               <div key={item.id} style={{...s.mCard,opacity:item.active==="No"?0.6:1}}>
                 <div style={s.mTop}>
                   <div style={s.fg}>
