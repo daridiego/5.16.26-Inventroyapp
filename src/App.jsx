@@ -366,7 +366,7 @@ const filteredManage=[
                   <button style={s.addBtn} onClick={downloadPO}>⬇️ Download PO</button>
                 </div>
               </div>
-              <div style={s.poSum}><b>{orderItems.length} items</b> need to be ordered, sorted by store location order.</div>
+              <div style={s.poSum}><b>{orderItems.length} items</b> need to be ordered, sorted by store location code.</div>
               <div style={{display:"flex",flexDirection:"column",gap:8,paddingBottom:20}}>
                 {orderItems.map(item=>(
                   <div key={item.id} style={{...s.poRow,background:parseFloat(item.count)<=(item.reorder||0)?"#fff5f5":"#fff"}}>
