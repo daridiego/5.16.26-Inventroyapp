@@ -131,6 +131,54 @@ function EditCell({value,onSave,type="text",options=null,width=100}){
   return(<input ref={ref} value={v} type={type==="number"?"number":"text"} style={{...s.inlineInput,width}} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")onSave(null);}}/>);
 }
 
+// ── LIST TAB HELPERS ─────────────────────────────────────────────────────────
+function ListSection({ title, subtitle, onAdd, children }) {
+  return (
+    <div style={{marginBottom:20}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+        <div>
+          <div style={{fontWeight:700,fontSize:14,color:"#111827"}}>{title}</div>
+          {subtitle&&<div style={{fontSize:11,color:"#9ca3af",marginTop:1}}>{subtitle}</div>}
+        </div>
+        <button style={{background:"#1a1a2e",color:"#fff",border:"none",borderRadius:8,
+          padding:"6px 14px",fontSize:12,fontWeight:600,cursor:"pointer"}}
+          onClick={onAdd}>+ Add</button>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function InlineEdit({ value, onSave, type="text", width=160, label }) {
+  const [editing, setEditing] = useState(false);
+  const [v, setV] = useState(String(value ?? ""));
+  const ref = useRef();
+  useEffect(() => { if (editing) { ref.current?.focus(); ref.current?.select(); } }, [editing]);
+  const commit = () => { setEditing(false); if (String(v).trim() !== String(value)) onSave(type==="number" ? parseFloat(v)||0 : v.trim()); };
+  if (editing) {
+    return (
+      <input ref={ref} value={v} type={type==="number"?"number":"text"}
+        style={{fontSize:13,padding:"4px 8px",border:"2px solid #3b82f6",borderRadius:6,
+          outline:"none",fontFamily:"inherit",width,boxSizing:"border-box"}}
+        onChange={e=>setV(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e=>{ if(e.key==="Enter") commit(); if(e.key==="Escape"){ setV(String(value??"")); setEditing(false); }}}
+      />
+    );
+  }
+  return (
+    <span onClick={()=>{ setV(String(value??"")); setEditing(true); }}
+      style={{fontSize:13,color:"#111827",cursor:"pointer",padding:"4px 8px",
+        borderRadius:6,border:"1px dashed #d1d5db",background:"#fafafa",
+        minWidth:width,display:"inline-block",boxSizing:"border-box"}}>
+      {label&&<span style={{fontSize:10,color:"#9ca3af",fontWeight:700,textTransform:"uppercase",marginRight:6}}>{label}</span>}
+      {value||<span style={{color:"#9ca3af",fontStyle:"italic"}}>tap to edit</span>}
+    </span>
+  );
+}
+
 export default function App(){
   const [items,setItems]=useState(SOURCE_ITEMS);
   const [counts,setCounts]=useState({});
@@ -325,7 +373,7 @@ export default function App(){
       </div>
 
       <div style={s.nav}>
-        {[["count","📋 Count"],["manage","⚙️ Manage"],["order",`🛒 Order${orderItems.length?` (${orderItems.length})`:""}`]].map(([v,l])=>(
+        {[["count","📋 Count"],["manage","⚙️ Manage"],["order",`🛒 Order${orderItems.length?` (${orderItems.length})`:""}`],["lists","📂 Lists"]].map(([v,l])=>(
           <button key={v} style={{...s.navBtn,...(view===v?s.navA:{})}} onClick={()=>setView(v)}>{l}</button>
         ))}
       </div>
@@ -520,6 +568,114 @@ export default function App(){
           )}
         </div>
       )}
+      {/* ── LISTS TAB ── */}
+      {view==="lists"&&(
+        <div style={{...s.content,paddingBottom:40}}>
+          <div style={{fontSize:12,color:"#6b7280",marginBottom:12,textAlign:"left"}}>
+            Tap any value to edit it inline. Changes save immediately and update all dropdowns.
+          </div>
+
+          {/* ── IN-HOUSE LOCATIONS ── */}
+          <ListSection
+            title="In-House Locations"
+            subtitle="Each location has a sort code — items sort by this in the Count tab"
+            onAdd={()=>{
+              const newLoc=[...locations,{name:"New Location",code:9}];
+              persistAll(items,counts,newLoc,categories,units,vendors);
+            }}
+          >
+            {[...locations].sort((a,b)=>a.code-b.code).map((loc,i)=>(
+              <div key={i} style={s.listRow}>
+                <div style={{display:"flex",alignItems:"center",gap:8,flex:1,flexWrap:"wrap"}}>
+                  <InlineEdit
+                    value={loc.code}
+                    type="number"
+                    width={55}
+                    label="Code"
+                    onSave={v=>{
+                      const nl=locations.map((l,j)=>j===locations.indexOf(loc)?{...l,code:Number(v)||0}:l);
+                      persistAll(items,counts,[...nl].sort((a,b)=>a.code-b.code),categories,units,vendors);
+                    }}
+                  />
+                  <InlineEdit
+                    value={loc.name}
+                    width={180}
+                    label="Name"
+                    onSave={v=>{
+                      const oldName=loc.name;
+                      const nl=locations.map((l,j)=>j===locations.indexOf(loc)?{...l,name:v}:l);
+                      // Update any items that used the old location name
+                      const ni=items.map(item=>item.location===oldName?{...item,location:v}:item);
+                      persistAll(ni,counts,nl,categories,units,vendors);
+                    }}
+                  />
+                </div>
+                <button style={s.rowDel} onClick={()=>{
+                  if(!confirm(`Delete "${loc.name}"?`))return;
+                  persistAll(items,counts,locations.filter((_,j)=>j!==locations.indexOf(loc)),categories,units,vendors);
+                }}>✕</button>
+              </div>
+            ))}
+          </ListSection>
+
+          {/* ── VENDORS ── */}
+          <ListSection
+            title="Vendors"
+            onAdd={()=>persistAll(items,counts,locations,[...categories],units,[...vendors,"New Vendor"])}
+          >
+            {vendors.map((v,i)=>(
+              <div key={i} style={s.listRow}>
+                <InlineEdit value={v} width={200} onSave={nv=>{
+                  const nw=vendors.map((x,j)=>j===i?nv:x);
+                  persistAll(items,counts,locations,categories,units,nw);
+                }}/>
+                <button style={s.rowDel} onClick={()=>{
+                  if(vendors.length<=1){alert("Must keep at least one vendor.");return;}
+                  persistAll(items,counts,locations,categories,units,vendors.filter((_,j)=>j!==i));
+                }}>✕</button>
+              </div>
+            ))}
+          </ListSection>
+
+          {/* ── CATEGORIES ── */}
+          <ListSection
+            title="Categories"
+            onAdd={()=>persistAll(items,counts,locations,[...categories,"New Category"],units,vendors)}
+          >
+            {categories.map((c,i)=>(
+              <div key={i} style={s.listRow}>
+                <InlineEdit value={c} width={200} onSave={nv=>{
+                  const nc=categories.map((x,j)=>j===i?nv:x);
+                  persistAll(items,counts,locations,nc,units,vendors);
+                }}/>
+                <button style={s.rowDel} onClick={()=>{
+                  if(categories.length<=1){alert("Must keep at least one category.");return;}
+                  persistAll(items,counts,locations,categories.filter((_,j)=>j!==i),units,vendors);
+                }}>✕</button>
+              </div>
+            ))}
+          </ListSection>
+
+          {/* ── UNITS ── */}
+          <ListSection
+            title="Units"
+            onAdd={()=>persistAll(items,counts,locations,categories,[...units,"New Unit"],vendors)}
+          >
+            {units.map((u,i)=>(
+              <div key={i} style={s.listRow}>
+                <InlineEdit value={u} width={200} onSave={nv=>{
+                  const nu=units.map((x,j)=>j===i?nv:x);
+                  persistAll(items,counts,locations,categories,nu,vendors);
+                }}/>
+                <button style={s.rowDel} onClick={()=>{
+                  if(units.length<=1){alert("Must keep at least one unit.");return;}
+                  persistAll(items,counts,locations,categories,units.filter((_,j)=>j!==i),vendors);
+                }}>✕</button>
+              </div>
+            ))}
+          </ListSection>
+        </div>
+      )}
     </div>
   );
 }
@@ -580,4 +736,6 @@ const s={
   poBar:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10},
   poSum:{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"8px 14px",fontSize:13,color:"#166534",marginBottom:12},
   poRow:{borderRadius:10,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid #e5e7eb"},
+  listRow:{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:8,padding:"8px 10px",border:"1px solid #e5e7eb"},
+  rowDel:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:6,padding:"3px 9px",fontSize:12,cursor:"pointer",flexShrink:0},
 };
