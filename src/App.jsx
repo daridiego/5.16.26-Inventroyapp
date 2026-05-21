@@ -94,25 +94,107 @@ function exportAll(items, counts, locations, categories, units, vendors){
   XLSX.writeFile(wb, `inventory-${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-function generatePO(orderItems, date){
-  const sorted = [...orderItems].sort((a,b)=>a.storeLocationNum-b.storeLocationNum);
-  const rows = sorted.map(item => {
-    const isCritical = parseFloat(item.count||0)<=(item.reorder||0);
-    const oUnit=orderUnitLabel(item), cUnit=countUnitLabel(item);
-    const parLabel=item.countPerOrderUnit&&item.orderUnit?`${item.par} ${cUnit}`:`${item.par} ${oUnit}`;
-    return `<tr class="${isCritical?"critical":""}">
-      <td>${escapeHtml(item.storeLocationNum)}</td><td>${escapeHtml(item.name)}</td>
-      <td><b>${escapeHtml(item.toOrder)} ${escapeHtml(oUnit)}</b></td>
-      <td>${escapeHtml(item.count||0)} ${escapeHtml(cUnit)}</td>
-      <td>${parLabel}</td><td>${escapeHtml(item.location)}</td><td>${escapeHtml(item.vendor||"")}</td></tr>`;
-  }).join("");
-  return `<!doctype html><html><head><meta charset="utf-8"/>
-<title>Purchase Order - ${escapeHtml(date)}</title>
-<style>body{font-family:Arial,sans-serif;margin:32px;color:#111827}h1{margin:0 0 4px}.date{color:#6b7280;margin-bottom:24px}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #d1d5db;padding:8px;text-align:left;font-size:13px}th{background:#f3f4f6;font-size:12px}tr.critical td{background:#fee2e2}footer{margin-top:36px;color:#6b7280;font-size:12px}</style>
-</head><body><h1>PURCHASE ORDER</h1><div class="date">${escapeHtml(date)}</div>
-<table><thead><tr><th>Loc Code</th><th>Item</th><th>Qty to Order</th><th>On Hand</th><th>Par</th><th>Location</th><th>Vendor</th></tr></thead>
-<tbody>${rows||"<tr><td colspan='7'>No items need to be ordered.</td></tr>"}</tbody></table>
-<footer>Restaurant Inventory System</footer></body></html>`;
+function openPO(orderItems, date){
+  // Group by vendor, within each vendor sort by storeOrder (location code)
+  const vendorMap = {};
+  orderItems.forEach(item => {
+    const v = item.vendor || "Other";
+    if (!vendorMap[v]) vendorMap[v] = [];
+    vendorMap[v].push(item);
+  });
+  // Sort vendors alphabetically, items within each vendor by location code
+  const vendors = Object.keys(vendorMap).sort();
+  vendors.forEach(v => vendorMap[v].sort((a,b) => (a.storeOrder||0) - (b.storeOrder||0)));
+
+  // Build plain text version (for copy button)
+  let plain = `PURCHASE ORDER — ${date}\n\n`;
+  vendors.forEach(vendor => {
+    plain += `${"━".repeat(4)} ${vendor.toUpperCase()} ${"━".repeat(Math.max(0, 36 - vendor.length))}\n`;
+    vendorMap[vendor].forEach(item => {
+      const qty = String(item.toOrder).padStart(3);
+      const unit = orderUnitLabel(item).padEnd(8);
+      plain += `  ${qty}  ${unit}  ${item.name}\n`;
+    });
+    plain += "\n";
+  });
+
+  // Build HTML rows grouped by vendor
+  let htmlBody = "";
+  vendors.forEach(vendor => {
+    htmlBody += `<div class="vendor-header">${escapeHtml(vendor)}</div>`;
+    vendorMap[vendor].forEach(item => {
+      const isCritical = parseFloat(item.count||0) <= (item.reorder||0);
+      htmlBody += `<div class="item-row${isCritical?" critical":""}">
+        <span class="qty">${escapeHtml(item.toOrder)}</span>
+        <span class="unit">${escapeHtml(orderUnitLabel(item))}</span>
+        <span class="name">${escapeHtml(item.name)}</span>
+      </div>`;
+    });
+  });
+
+  const plainEscaped = plain.replace(/\\/g,"\\\\").replace(/`/g,"\\`");
+  const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Purchase Order — ${escapeHtml(date)}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:#f8f8f6;color:#111827;padding:24px 20px 60px}
+    h1{font-size:20px;font-weight:700;margin-bottom:2px}
+    .date{font-size:13px;color:#6b7280;margin-bottom:20px}
+    .vendor-header{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      color:#fff;background:#1a1a2e;padding:6px 14px;border-radius:8px 8px 0 0;margin-top:16px}
+    .item-row{display:flex;align-items:baseline;gap:0;padding:9px 14px;background:#fff;
+      border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb}
+    .item-row:last-of-type{border-radius:0 0 8px 8px;margin-bottom:4px}
+    .item-row.critical{background:#fff5f5}
+    .qty{font-size:18px;font-weight:700;color:#1a1a2e;min-width:40px;text-align:right;margin-right:10px}
+    .unit{font-size:13px;color:#6b7280;min-width:52px;margin-right:10px}
+    .name{font-size:15px;color:#111827}
+    .copy-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;
+      padding:12px 20px;display:flex;gap:10px;align-items:center}
+    .copy-btn{background:#1a1a2e;color:#fff;border:none;border-radius:10px;padding:10px 24px;
+      font-size:14px;font-weight:700;cursor:pointer;flex:1}
+    .copy-btn:active{opacity:0.8}
+    .copy-notice{font-size:13px;color:#16a34a;font-weight:600;opacity:0;transition:opacity 0.3s}
+    .copy-notice.show{opacity:1}
+    .total{font-size:12px;color:#6b7280;margin-top:16px;text-align:right}
+  </style>
+</head>
+<body>
+  <h1>Purchase Order</h1>
+  <div class="date">${escapeHtml(date)}</div>
+  ${htmlBody}
+  <div class="total">${orderItems.length} items across ${vendors.length} vendor${vendors.length!==1?"s":""}</div>
+  <div class="copy-bar">
+    <button class="copy-btn" onclick="copyText()">📋 Copy as Plain Text</button>
+    <span class="copy-notice" id="notice">Copied!</span>
+  </div>
+  <script>
+    const plainText = \`${plainEscaped}\`;
+    function copyText(){
+      navigator.clipboard.writeText(plainText).then(()=>{
+        const n=document.getElementById('notice');
+        n.classList.add('show');
+        setTimeout(()=>n.classList.remove('show'),2000);
+      }).catch(()=>{
+        const ta=document.createElement('textarea');
+        ta.value=plainText;ta.style.position='fixed';ta.style.opacity='0';
+        document.body.appendChild(ta);ta.select();document.execCommand('copy');
+        document.body.removeChild(ta);
+        const n=document.getElementById('notice');
+        n.classList.add('show');
+        setTimeout(()=>n.classList.remove('show'),2000);
+      });
+    }
+  </script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank");
+  win.document.write(html);
+  win.document.close();
 }
 
 function escapeHtml(value){
@@ -192,8 +274,6 @@ export default function App(){
   const [filterActive,setFilterActive]=useState("Active");
   const [countedOnly,setCountedOnly]=useState(false);
   const [editingCell,setEditingCell]=useState(null);
-  const [poHTML,setPoHTML]=useState(null);
-  const [generating,setGenerating]=useState(false);
   const [saved,setSaved]=useState(false);
   const [importStatus,setImportStatus]=useState(null);
   const importRef=useRef();
@@ -353,11 +433,15 @@ export default function App(){
   });
   const filteredManage=[...filtered.filter(i=>i.active==="Yes"),...filtered.filter(i=>i.active!=="Yes")];
   const countedCount=Object.values(counts).filter(v=>v!=="").length;
-  const orderItems=sorted.filter(i=>i.active==="Yes").map(i=>({...i,count:counts[i.id]??"",toOrder:needToOrder(i,counts[i.id]??"")})).filter(i=>i.toOrder>0).sort((a,b)=>a.storeLocationNum-b.storeLocationNum);
+  const orderItems=sorted
+    .filter(i=>i.active==="Yes" && counts[i.id]!=="" && counts[i.id]!==undefined)
+    .map(i=>({...i,count:counts[i.id],toOrder:needToOrder(i,counts[i.id])}))
+    .filter(i=>i.toOrder>0)
+    .sort((a,b)=>a.storeOrder-b.storeOrder);
   const isEditing=(id,field)=>editingCell?.itemId===id&&editingCell?.field===field;
 
-  function handlePO(){setGenerating(true);setPoHTML(null);try{setPoHTML(generatePO(orderItems,date));setView("order");}catch{alert("Failed.");}setGenerating(false);}
-  function downloadPO(){const b=new Blob([poHTML],{type:"text/html"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`purchase-order-${new Date().toISOString().slice(0,10)}.html`;a.click();URL.revokeObjectURL(u);}
+  function handlePO(){ openPO(orderItems, date); }
+  
 
   return(
     <div style={s.app}>
@@ -426,8 +510,8 @@ export default function App(){
             {filtered.length===0&&<div style={s.empty}>No items match your filters.</div>}
           </div>
           <div style={s.fab}>
-            <button style={{...s.fabBtn,opacity:generating?0.7:1}} onClick={handlePO} disabled={generating||orderItems.length===0}>
-              {generating?"⏳ Generating...":orderItems.length===0?"✅ All Stocked — Nothing to Order":`📄 Generate Purchase Order (${orderItems.length} items)`}
+            <button style={s.fabBtn} onClick={handlePO} disabled={orderItems.length===0}>
+              {orderItems.length===0?"✅ All Stocked — Nothing to Order":`📄 Generate Purchase Order (${orderItems.length} items)`}
             </button>
           </div>
         </div>
@@ -530,39 +614,37 @@ export default function App(){
       {/* ── ORDER TAB ── */}
       {view==="order"&&(
         <div style={s.content}>
-          {!poHTML?(
+          {orderItems.length===0?(
             <div style={s.oPrompt}>
-              <div style={{fontSize:52,marginBottom:12}}>🛒</div>
-              <p style={{color:"#6b7280",fontSize:15,marginBottom:24}}>{orderItems.length===0?"All items are at or above par. Nothing to order!":`${orderItems.length} items need ordering.`}</p>
-              {orderItems.length>0&&<button style={s.fabBtn} onClick={handlePO} disabled={generating}>{generating?"⏳ Generating...":"📄 Generate Purchase Order"}</button>}
+              <div style={{fontSize:52,marginBottom:12}}>✅</div>
+              <p style={{color:"#6b7280",fontSize:15,marginBottom:8}}>All counted items are at or above par.</p>
+              <p style={{color:"#9ca3af",fontSize:13}}>Count items on the Count tab to see what needs ordering.</p>
             </div>
           ):(
-            <div>
-              <div style={s.poBar}>
-                <span style={{fontWeight:700,color:"#16a34a",fontSize:14}}>✅ Purchase Order Ready</span>
-                <div style={{display:"flex",gap:7}}>
-                  <button style={s.xlsBtn} onClick={()=>exportAll(items,counts,locations,categories,units,vendors)}>⬇️ Export .xlsx</button>
-                  <button style={s.addBtn} onClick={downloadPO}>⬇️ Download PO</button>
-                </div>
-              </div>
-              <div style={s.poSum}><b>{orderItems.length} items</b> need to be ordered, sorted by store location code.</div>
-              <div style={{display:"flex",flexDirection:"column",gap:8,paddingBottom:20}}>
-                {orderItems.map(item=>(
-                  <div key={item.id} style={{...s.poRow,background:parseFloat(item.count)<=(item.reorder||0)?"#fff5f5":"#fff"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={s.otag}>{item.storeLocationNum}</span>
-                      <div>
-                        <div style={{fontWeight:700,fontSize:14}}>{item.name}</div>
-                        <div style={{fontSize:11,color:"#6b7280"}}>📍 {item.location} · {item.vendor}</div>
-                        {item.countPerOrderUnit&&item.orderUnit&&<div style={{fontSize:11,color:"#6b7280"}}>Have: {item.count||0} {countUnitLabel(item)} · Par: {item.par} {countUnitLabel(item)}</div>}
+            <div style={{paddingBottom:100}}>
+              {/* Summary cards by vendor */}
+              {[...new Set(orderItems.map(i=>i.vendor||"Other"))].sort().map(vendor=>{
+                const vendorItems=orderItems.filter(i=>(i.vendor||"Other")===vendor);
+                return(
+                  <div key={vendor} style={{marginBottom:16}}>
+                    <div style={s.vendorHeader}>{vendor}</div>
+                    {vendorItems.map(item=>(
+                      <div key={item.id} style={{...s.poRow,background:parseFloat(item.count)<=(item.reorder||0)?"#fff5f5":"#fff"}}>
+                        <div>
+                          <span style={{fontWeight:700,fontSize:15,color:"#1a1a2e",marginRight:8}}>{item.toOrder}</span>
+                          <span style={{fontSize:13,color:"#6b7280",marginRight:10}}>{orderUnitLabel(item)}</span>
+                          <span style={{fontSize:14,color:"#111827"}}>{item.name}</span>
+                        </div>
+                        {parseFloat(item.count)<=(item.reorder||0)&&<span style={{fontSize:10,color:"#b91c1c",fontWeight:700,background:"#fee2e2",padding:"2px 6px",borderRadius:6}}>CRITICAL</span>}
                       </div>
-                    </div>
-                    <div style={{textAlign:"right"}}>
-                      <div style={{fontWeight:700,color:"#1a1a2e",fontSize:14}}>Order: {item.toOrder} {orderUnitLabel(item)}</div>
-                      {!(item.countPerOrderUnit&&item.orderUnit)&&<div style={{fontSize:11,color:"#9ca3af"}}>Have: {item.count||0} / Par: {item.par}</div>}
-                    </div>
+                    ))}
                   </div>
-                ))}
+                );
+              })}
+              <div style={s.fab}>
+                <button style={s.fabBtn} onClick={handlePO}>
+                  📄 Open Purchase Order ({orderItems.length} items)
+                </button>
               </div>
             </div>
           )}
@@ -733,9 +815,11 @@ const s={
   actBtn:{border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"},
   delBtn:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:7,padding:"4px 10px",fontSize:13,cursor:"pointer"},
   oPrompt:{textAlign:"center",padding:"60px 20px"},
-  poBar:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10},
-  poSum:{background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:8,padding:"8px 14px",fontSize:13,color:"#166534",marginBottom:12},
-  poRow:{borderRadius:10,padding:"12px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",border:"1px solid #e5e7eb"},
+  vendorHeader:{background:"#1a1a2e",color:"#fff",fontWeight:700,fontSize:12,letterSpacing:"0.5px",
+    textTransform:"uppercase",padding:"7px 14px",borderRadius:"8px 8px 0 0",marginTop:4},
+  poRow:{padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",
+    background:"#fff",borderLeft:"1px solid #e5e7eb",borderRight:"1px solid #e5e7eb",
+    borderBottom:"1px solid #e5e7eb"},
   listRow:{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:8,padding:"8px 10px",border:"1px solid #e5e7eb"},
   rowDel:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:6,padding:"3px 9px",fontSize:12,cursor:"pointer",flexShrink:0},
 };
