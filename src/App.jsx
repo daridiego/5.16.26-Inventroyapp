@@ -1,16 +1,34 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import { loadInventoryData, saveInventoryData } from "./storage";
- 
-const SOURCE_ITEMS = [{"id":1,"storeOrder":1.0,"storeLocationNum":1030,"name":"Mexican Code 1/2L","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":2,"storeOrder":1.0,"storeLocationNum":800,"name":"Sauce To-Go Container 4 Oz","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":3,"storeOrder":1.0,"storeLocationNum":410,"name":"Queso Liquido","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":4,"storeOrder":1.0,"storeLocationNum":1010,"name":"Canned Coke","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":5,"storeOrder":1.0,"storeLocationNum":1000,"name":"Apple Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":6,"storeOrder":1.0,"storeLocationNum":1000,"name":"Mango Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":7,"storeOrder":1.0,"storeLocationNum":1000,"name":"Orange Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":8,"storeOrder":1.0,"storeLocationNum":990,"name":"Bottled Water","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":9,"storeOrder":1.0,"storeLocationNum":990,"name":"Topo chico","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":10,"storeOrder":1.0,"storeLocationNum":400,"name":"Chipotel En Adobo","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":11,"storeOrder":1.0,"storeLocationNum":690,"name":"9\" Aluminum Round Containers","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":12,"storeOrder":1.0,"storeLocationNum":700,"name":"7\" Aluminum Round Containers","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":13,"storeOrder":1.0,"storeLocationNum":1150,"name":"Nopales","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":14,"storeOrder":1.0,"storeLocationNum":670,"name":"To Go Soup Containers 24Oz","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":15,"storeOrder":1.2,"storeLocationNum":780,"name":"Straws wrapped 10\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":16,"storeOrder":1.2,"storeLocationNum":790,"name":"Lid for Sauce To-Go Container 4 Oz","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":17,"storeOrder":1.2,"storeLocationNum":880,"name":"Sternos","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":18,"storeOrder":1.2,"storeLocationNum":930,"name":"Serving Spoons Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":19,"storeOrder":1.2,"storeLocationNum":940,"name":"Seving Forks Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":20,"storeOrder":1.2,"storeLocationNum":950,"name":"Serving Tongs Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":21,"storeOrder":1.2,"storeLocationNum":1230,"name":"Wire Chaffing Dishes","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":22,"storeOrder":1.2,"storeLocationNum":1000,"name":"Diet Coke (can)","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":23,"storeOrder":1.2,"storeLocationNum":1020,"name":"Canned Sprite","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":24,"storeOrder":1.2,"storeLocationNum":680,"name":"Lids for 7\" Aluminum Round Containers","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":25,"storeOrder":1.2,"storeLocationNum":670,"name":"Lids for 9\" Aluminum Round Containers","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":26,"storeOrder":1.2,"storeLocationNum":850,"name":"Plastic Forks Heavy Weight","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":27,"storeOrder":1.2,"storeLocationNum":450,"name":"Togo contenedores para flan","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":28,"storeOrder":1.2,"storeLocationNum":380,"name":"Ketchup Bottles","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":29,"storeOrder":1.2,"storeLocationNum":740,"name":"Burrito Paper (food Wrap) shts 12\"x12\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":30,"storeOrder":1.2,"storeLocationNum":740,"name":"Burrito Paper (food Wrap) shts 9\"x12\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":31,"storeOrder":1.2,"storeLocationNum":660,"name":"To Go Soup Containers 16 Oz","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":32,"storeOrder":1.2,"storeLocationNum":650,"name":"To Go Cups 16 Oz for fountain TP16D","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":33,"storeOrder":1.2,"storeLocationNum":650,"name":"Cups para horchata grande","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":34,"storeOrder":1.2,"storeLocationNum":650,"name":"Lids para horchata grande","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":35,"storeOrder":1.2,"storeLocationNum":650,"name":"Lids For Fountain Cups","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":36,"storeOrder":1.5,"storeLocationNum":240,"name":"Glitter Cleaner para plancha","location":"Corner Under Fountain","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":37,"storeOrder":1.5,"storeLocationNum":1060,"name":"Lime Juice","location":"Corner Under Fountain","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":38,"storeOrder":2.0,"storeLocationNum":810,"name":"Lid for Sauce To-Go Container .75 Oz","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":39,"storeOrder":2.0,"storeLocationNum":820,"name":"Sauce To-Go Container .75 Oz","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":40,"storeOrder":2.0,"storeLocationNum":1070,"name":"Napkins","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":41,"storeOrder":2.0,"storeLocationNum":450,"name":"Papel Para Impresora de enfrete","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":42,"storeOrder":2.0,"storeLocationNum":450,"name":"Papel para impresora de cocina","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":43,"storeOrder":2.0,"storeLocationNum":1160,"name":"Masking Tape","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":44,"storeOrder":2.0,"storeLocationNum":460,"name":"Ketchup Packets","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":45,"storeOrder":2.0,"storeLocationNum":490,"name":"Sugar (For Flan)","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":46,"storeOrder":2.5,"storeLocationNum":960,"name":"4# Paper Bags","location":"Coke Shelve","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":47,"storeOrder":2.5,"storeLocationNum":970,"name":"6# Geocery Brown Paper Bags","location":"Coke Shelve","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":48,"storeOrder":2.6,"storeLocationNum":450,"name":"Cooking Oil","location":"Next to chip warmer","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":49,"storeOrder":2.6,"storeLocationNum":520,"name":"Salt","location":"Next to chip warmer","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":50,"storeOrder":2.7,"storeLocationNum":890,"name":"Aluminum Full Pans Deep","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":51,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Full Pans Medium","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":52,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Full Pans Shallow","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":53,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Half Pans Medium","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":54,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Half Pans Deep","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":55,"storeOrder":2.7,"storeLocationNum":910,"name":"Aluminum Full Pan Lids","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":56,"storeOrder":2.7,"storeLocationNum":920,"name":"Aluminum Half Pan Lids","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":57,"storeOrder":3.0,"storeLocationNum":980,"name":"20# Paper Bags Shorties","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":58,"storeOrder":3.0,"storeLocationNum":630,"name":"Bolsas Para Churros","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":59,"storeOrder":3.0,"storeLocationNum":450,"name":"Tinta para impresora de cocina","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":60,"storeOrder":3.0,"storeLocationNum":630,"name":"Cup carrier","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":61,"storeOrder":3.0,"storeLocationNum":450,"name":"Marg Mix","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":62,"storeOrder":3.0,"storeLocationNum":450,"name":"Tripple Sec","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":63,"storeOrder":3.0,"storeLocationNum":1170,"name":"Chamoy","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":64,"storeOrder":3.0,"storeLocationNum":720,"name":"Aluminium individual Wrap para burrito","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":65,"storeOrder":3.0,"storeLocationNum":730,"name":"Aluminum Large (18\"x500ft)","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":66,"storeOrder":3.0,"storeLocationNum":750,"name":"Plastic Wrap Large (18\"x2000ft)","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":67,"storeOrder":3.0,"storeLocationNum":760,"name":"Plastic Wrap Meduim (12in x 3000\")","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":68,"storeOrder":3.0,"storeLocationNum":450,"name":"Mango Flavor For Margs","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":69,"storeOrder":3.0,"storeLocationNum":450,"name":"Strawberry Flavor For Margs","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":70,"storeOrder":3.3,"storeLocationNum":2000,"name":"Sharpies","location":"Cashier area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":71,"storeOrder":3.4,"storeLocationNum":330,"name":"Tajin","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":72,"storeOrder":3.4,"storeLocationNum":860,"name":"Plastic Knives Heavy Weight","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":73,"storeOrder":3.4,"storeLocationNum":870,"name":"Plastic Spoons Heavy Weight","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":74,"storeOrder":3.4,"storeLocationNum":710,"name":"Tooth Picks","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":75,"storeOrder":3.5,"storeLocationNum":430,"name":"Crushed Tomatillo","location":"Can area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":76,"storeOrder":3.5,"storeLocationNum":410,"name":"Sliced Jalapeños","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":77,"storeOrder":3.5,"storeLocationNum":420,"name":"Sliced Olives","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":78,"storeOrder":3.5,"storeLocationNum":1140,"name":"Salsa Mexicana Embassa","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":79,"storeOrder":3.5,"storeLocationNum":1250,"name":"White towles","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":80,"storeOrder":3.5,"storeLocationNum":470,"name":"Condensed Milk (For Flan)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":81,"storeOrder":3.5,"storeLocationNum":480,"name":"Evaporated Milk (For Flan)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":82,"storeOrder":3.5,"storeLocationNum":420,"name":"Chicken Stock (Caldo De pollo)","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":83,"storeOrder":3.55,"storeLocationNum":450,"name":"Tequila","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":84,"storeOrder":3.55,"storeLocationNum":830,"name":"Latex Disposable Gloves-L","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":85,"storeOrder":3.55,"storeLocationNum":840,"name":"Latex Disposable Gloves-M","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":86,"storeOrder":3.55,"storeLocationNum":1240,"name":"To Go bags Big","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":87,"storeOrder":3.7,"storeLocationNum":240,"name":"Sanitizing tablets","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":88,"storeOrder":3.7,"storeLocationNum":250,"name":"Glass Cleaner","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":89,"storeOrder":3.7,"storeLocationNum":260,"name":"Hand Soap","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":90,"storeOrder":4.0,"storeLocationNum":1130,"name":"Light Chilli Powder (New Mexico)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":91,"storeOrder":4.0,"storeLocationNum":440,"name":"Fryer Oil Filters","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":92,"storeOrder":4.0,"storeLocationNum":280,"name":"Bleach","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":93,"storeOrder":4.0,"storeLocationNum":290,"name":"Pinesol","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":94,"storeOrder":4.0,"storeLocationNum":300,"name":"Green Scotch Brite","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":95,"storeOrder":4.0,"storeLocationNum":310,"name":"Steel Wool (esponja de metal)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":96,"storeOrder":4.0,"storeLocationNum":320,"name":"Grill Brick","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":97,"storeOrder":4.0,"storeLocationNum":340,"name":"Tomato Bouillon With Chicken (Knorr)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":98,"storeOrder":4.0,"storeLocationNum":350,"name":"Salsa Inglesa","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":99,"storeOrder":4.0,"storeLocationNum":360,"name":"Apple Cider Vinegar","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":100,"storeOrder":4.0,"storeLocationNum":390,"name":"Vanilla (For Flan)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":101,"storeOrder":4.0,"storeLocationNum":530,"name":"Granulated Garlic","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":102,"storeOrder":4.0,"storeLocationNum":540,"name":"Groud Cumin","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":103,"storeOrder":4.0,"storeLocationNum":550,"name":"Ground Black Pepper","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":104,"storeOrder":4.0,"storeLocationNum":540,"name":"Marjoarn","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":105,"storeOrder":4.0,"storeLocationNum":540,"name":"Thyme","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":106,"storeOrder":4.0,"storeLocationNum":560,"name":"Beef Base","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":107,"storeOrder":4.0,"storeLocationNum":560,"name":"Ground Cinnamon","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":108,"storeOrder":4.0,"storeLocationNum":560,"name":"Red Chilli Flakes","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":109,"storeOrder":4.0,"storeLocationNum":580,"name":"Whole Mexican Oregano","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":110,"storeOrder":4.0,"storeLocationNum":590,"name":"Whole Pepper","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":111,"storeOrder":4.0,"storeLocationNum":600,"name":"Ground Cloves","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":112,"storeOrder":4.0,"storeLocationNum":610,"name":"Whole Cloves","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":113,"storeOrder":4.0,"storeLocationNum":770,"name":"Sandwich Bags for Portioning","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":114,"storeOrder":4.0,"storeLocationNum":1090,"name":"Taco Seasoning (McCormic)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":115,"storeOrder":4.0,"storeLocationNum":1180,"name":"Achiote","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":116,"storeOrder":4.0,"storeLocationNum":1190,"name":"Guajillo","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":117,"storeOrder":4.0,"storeLocationNum":1200,"name":"New Mexico","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":118,"storeOrder":4.0,"storeLocationNum":1210,"name":"Pasilla","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":119,"storeOrder":4.0,"storeLocationNum":1220,"name":"Chile de Arbol","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":120,"storeOrder":4.0,"storeLocationNum":1290,"name":"Mole Paste","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":121,"storeOrder":4.0,"storeLocationNum":450,"name":"Crisco (all vegy shortening)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":122,"storeOrder":4.0,"storeLocationNum":1040,"name":"Horchata Mix","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":123,"storeOrder":4.0,"storeLocationNum":500,"name":"Harina de tamales","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":124,"storeOrder":4.0,"storeLocationNum":570,"name":"Ground Paprika","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":125,"storeOrder":5.0,"storeLocationNum":160,"name":"Chicken Strips","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":126,"storeOrder":5.0,"storeLocationNum":150,"name":"Fries","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":127,"storeOrder":5.0,"storeLocationNum":210,"name":"Churros","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":128,"storeOrder":5.0,"storeLocationNum":2000,"name":"Pulpa de Aguacate","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":129,"storeOrder":5.0,"storeLocationNum":2000,"name":"Carne para menudo","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":130,"storeOrder":5.0,"storeLocationNum":80,"name":"Chorizo","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":131,"storeOrder":5.0,"storeLocationNum":210,"name":"Bacon 14/16 (tiras)","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":132,"storeOrder":5.0,"storeLocationNum":230,"name":"Mahi Mahi Taco pieces","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":133,"storeOrder":5.0,"storeLocationNum":1110,"name":"Bread for Tortas","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":134,"storeOrder":6.0,"storeLocationNum":510,"name":"Hoja para tamal","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":135,"storeOrder":6.0,"storeLocationNum":30,"name":"Potatoes","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":136,"storeOrder":6.0,"storeLocationNum":40,"name":"Yellow Onions","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":137,"storeOrder":6.0,"storeLocationNum":460,"name":"Frijoles","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":138,"storeOrder":6.0,"storeLocationNum":460,"name":"Parbroiled Rice","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":139,"storeOrder":6.0,"storeLocationNum":20,"name":"Avocado","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":140,"storeOrder":6.0,"storeLocationNum":620,"name":"To Go Boxes #1","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":141,"storeOrder":6.0,"storeLocationNum":630,"name":"To Go Boxes #3","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":142,"storeOrder":6.0,"storeLocationNum":640,"name":"To Go Boxes #8","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":143,"storeOrder":7.0,"storeLocationNum":10,"name":"Roma Tomatoes","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":144,"storeOrder":7.0,"storeLocationNum":50,"name":"Pineapple","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":145,"storeOrder":7.0,"storeLocationNum":90,"name":"Cilantro","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":146,"storeOrder":7.0,"storeLocationNum":110,"name":"Green Onion","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":147,"storeOrder":7.0,"storeLocationNum":120,"name":"Red Bell Peppers","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":148,"storeOrder":7.0,"storeLocationNum":120,"name":"Green Bell Peppers","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":149,"storeOrder":7.0,"storeLocationNum":120,"name":"Zuchinni Green","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":150,"storeOrder":7.0,"storeLocationNum":120,"name":"Squash Yellow","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":151,"storeOrder":7.0,"storeLocationNum":220,"name":"Huevo Liquido","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":152,"storeOrder":7.0,"storeLocationNum":130,"name":"Serranos","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":153,"storeOrder":7.0,"storeLocationNum":140,"name":"Iceberg Lettuce","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":154,"storeOrder":7.0,"storeLocationNum":170,"name":"Fancy Shred Jack Cheese Jack Chedar","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":155,"storeOrder":7.0,"storeLocationNum":170,"name":"Mozarela cheese","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":156,"storeOrder":7.0,"storeLocationNum":190,"name":"Boneless Skinless Chicken Thighs","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":157,"storeOrder":7.0,"storeLocationNum":200,"name":"Sour Cream Mexican Style","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":158,"storeOrder":7.0,"storeLocationNum":220,"name":"Large Eggs","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":159,"storeOrder":7.0,"storeLocationNum":70,"name":"Pealed Garlic","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":160,"storeOrder":7.0,"storeLocationNum":100,"name":"Jalapeños Fresh","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":161,"storeOrder":7.0,"storeLocationNum":60,"name":"Limes","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":162,"storeOrder":7.0,"storeLocationNum":180,"name":"Grated Queso Cotija","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":163,"storeOrder":7.0,"storeLocationNum":1100,"name":"Leche Para En Caja de Carton","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":164,"storeOrder":7.0,"storeLocationNum":370,"name":"Mayonnaise","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":165,"storeOrder":8.0,"storeLocationNum":1260,"name":"Bags for Rice","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":166,"storeOrder":8.0,"storeLocationNum":1270,"name":"White Garbage Bags 13 Gallons","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":167,"storeOrder":8.0,"storeLocationNum":1280,"name":"Black Garbage bags","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":168,"storeOrder":8.0,"storeLocationNum":270,"name":"Dawn Soap","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":169,"storeOrder":8.0,"storeLocationNum":1050,"name":"Toilet Paper","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":170,"storeOrder":8.0,"storeLocationNum":1080,"name":"Paper Towels (GR-340)","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""}];
 
-const LOCATIONS = [
-  "Bar","Bathroom","Cabinets","Can area","Cajon","Cashier area","Coke Shelve",
-  "Corner","Corner Far","Corner Under Fountain","Dish Washer Area","Freezer",
-  "Line Area","Mueble 2","Next to chip warmer","Top Shelves","Walk In","Other",
+// ── DEFAULT REFERENCE LISTS (seeded from your spreadsheet) ───────────────────
+const DEFAULT_LOCATIONS = [
+  { name: "Corner Far",           code: 1    },
+  { name: "Corner",               code: 1.2  },
+  { name: "Corner Under Fountain",code: 1.5  },
+  { name: "Cabinets",             code: 2    },
+  { name: "Coke Shelve",          code: 2.5  },
+  { name: "Next to chip warmer",  code: 2.6  },
+  { name: "Top Shelves",          code: 2.7  },
+  { name: "Mueble 2",             code: 3    },
+  { name: "Cashier area",         code: 3.3  },
+  { name: "Cajon",                code: 3.4  },
+  { name: "Can area",             code: 3.5  },
+  { name: "Bar",                  code: 3.55 },
+  { name: "Under Hand Sink",      code: 3.7  },
+  { name: "Dish Washer Area",     code: 4    },
+  { name: "Freezer",              code: 5    },
+  { name: "Line Area",            code: 6    },
+  { name: "Walk In",              code: 7    },
+  { name: "Bathroom",             code: 8    },
 ];
-const UNITS = ["each","case","lbs","bags","boxes","gallons","oz","flats","bunches","cans","dozen","packs"];
-const CATEGORIES = ["","Beverages","Cleaning","Dairy","Dry Goods","Frozen","Paper Goods","Produce","Proteins","Supplies","Other"];
+const DEFAULT_CATEGORIES = ["Beverages","Canned Goods","Cleaning","Dairy","Dry Goods","Frozen","Paper Goods","Produce","Proteins","Supplies","Other"];
+const DEFAULT_UNITS       = ["each","case","lbs","bags","boxes","gallons","oz","flats","bunches","cans","dozen","packs"];
+const DEFAULT_VENDORS     = ["Restaurant Depot","Scotts"];
+
+const SOURCE_ITEMS = [{"id":1,"storeOrder":1.0,"storeLocationNum":1030,"name":"Mexican Code 1/2L","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":2,"storeOrder":1.0,"storeLocationNum":800,"name":"Sauce To-Go Container 4 Oz","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":3,"storeOrder":1.0,"storeLocationNum":410,"name":"Queso Liquido","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":4,"storeOrder":1.0,"storeLocationNum":1010,"name":"Canned Coke","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":5,"storeOrder":1.0,"storeLocationNum":1000,"name":"Apple Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":6,"storeOrder":1.0,"storeLocationNum":1000,"name":"Mango Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":7,"storeOrder":1.0,"storeLocationNum":1000,"name":"Orange Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":8,"storeOrder":1.0,"storeLocationNum":990,"name":"Bottled Water","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":9,"storeOrder":1.0,"storeLocationNum":990,"name":"Topo chico","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":10,"storeOrder":1.0,"storeLocationNum":400,"name":"Chipotel En Adobo","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":11,"storeOrder":1.0,"storeLocationNum":690,"name":"9\" Aluminum Round Containers","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":12,"storeOrder":1.0,"storeLocationNum":700,"name":"7\" Aluminum Round Containers","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":13,"storeOrder":1.0,"storeLocationNum":1150,"name":"Nopales","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":14,"storeOrder":1.0,"storeLocationNum":670,"name":"To Go Soup Containers 24Oz","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":15,"storeOrder":1.2,"storeLocationNum":780,"name":"Straws wrapped 10\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":16,"storeOrder":1.2,"storeLocationNum":790,"name":"Lid for Sauce To-Go Container 4 Oz","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":17,"storeOrder":1.2,"storeLocationNum":880,"name":"Sternos","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":18,"storeOrder":1.2,"storeLocationNum":930,"name":"Serving Spoons Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":19,"storeOrder":1.2,"storeLocationNum":940,"name":"Seving Forks Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":20,"storeOrder":1.2,"storeLocationNum":950,"name":"Serving Tongs Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":21,"storeOrder":1.2,"storeLocationNum":1230,"name":"Wire Chaffing Dishes","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":22,"storeOrder":1.2,"storeLocationNum":1000,"name":"Diet Coke (can)","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":23,"storeOrder":1.2,"storeLocationNum":1020,"name":"Canned Sprite","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":24,"storeOrder":1.2,"storeLocationNum":680,"name":"Lids for 7\" Aluminum Round Containers","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":25,"storeOrder":1.2,"storeLocationNum":670,"name":"Lids for 9\" Aluminum Round Containers","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":26,"storeOrder":1.2,"storeLocationNum":850,"name":"Plastic Forks Heavy Weight","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":27,"storeOrder":1.2,"storeLocationNum":450,"name":"Togo contenedores para flan","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":28,"storeOrder":1.2,"storeLocationNum":380,"name":"Ketchup Bottles","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":29,"storeOrder":1.2,"storeLocationNum":740,"name":"Burrito Paper (food Wrap) shts 12\"x12\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":30,"storeOrder":1.2,"storeLocationNum":740,"name":"Burrito Paper (food Wrap) shts 9\"x12\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":31,"storeOrder":1.2,"storeLocationNum":660,"name":"To Go Soup Containers 16 Oz","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":32,"storeOrder":1.2,"storeLocationNum":650,"name":"To Go Cups 16 Oz for fountain TP16D","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":33,"storeOrder":1.2,"storeLocationNum":650,"name":"Cups para horchata grande","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":34,"storeOrder":1.2,"storeLocationNum":650,"name":"Lids para horchata grande","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":35,"storeOrder":1.2,"storeLocationNum":650,"name":"Lids For Fountain Cups","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":36,"storeOrder":1.5,"storeLocationNum":240,"name":"Glitter Cleaner para plancha","location":"Corner Under Fountain","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":37,"storeOrder":1.5,"storeLocationNum":1060,"name":"Lime Juice","location":"Corner Under Fountain","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":38,"storeOrder":2.0,"storeLocationNum":810,"name":"Lid for Sauce To-Go Container .75 Oz","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":39,"storeOrder":2.0,"storeLocationNum":820,"name":"Sauce To-Go Container .75 Oz","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":40,"storeOrder":2.0,"storeLocationNum":1070,"name":"Napkins","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":41,"storeOrder":2.0,"storeLocationNum":450,"name":"Papel Para Impresora de enfrete","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":42,"storeOrder":2.0,"storeLocationNum":450,"name":"Papel para impresora de cocina","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":43,"storeOrder":2.0,"storeLocationNum":1160,"name":"Masking Tape","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":44,"storeOrder":2.0,"storeLocationNum":460,"name":"Ketchup Packets","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":45,"storeOrder":2.0,"storeLocationNum":490,"name":"Sugar (For Flan)","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":46,"storeOrder":2.5,"storeLocationNum":960,"name":"4# Paper Bags","location":"Coke Shelve","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":47,"storeOrder":2.5,"storeLocationNum":970,"name":"6# Geocery Brown Paper Bags","location":"Coke Shelve","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":48,"storeOrder":2.6,"storeLocationNum":450,"name":"Cooking Oil","location":"Next to chip warmer","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":49,"storeOrder":2.6,"storeLocationNum":520,"name":"Salt","location":"Next to chip warmer","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":50,"storeOrder":2.7,"storeLocationNum":890,"name":"Aluminum Full Pans Deep","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":51,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Full Pans Medium","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":52,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Full Pans Shallow","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":53,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Half Pans Medium","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":54,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Half Pans Deep","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":55,"storeOrder":2.7,"storeLocationNum":910,"name":"Aluminum Full Pan Lids","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":56,"storeOrder":2.7,"storeLocationNum":920,"name":"Aluminum Half Pan Lids","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":57,"storeOrder":3.0,"storeLocationNum":980,"name":"20# Paper Bags Shorties","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":58,"storeOrder":3.0,"storeLocationNum":630,"name":"Bolsas Para Churros","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":59,"storeOrder":3.0,"storeLocationNum":450,"name":"Tinta para impresora de cocina","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":60,"storeOrder":3.0,"storeLocationNum":630,"name":"Cup carrier","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":61,"storeOrder":3.0,"storeLocationNum":450,"name":"Marg Mix","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":62,"storeOrder":3.0,"storeLocationNum":450,"name":"Tripple Sec","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":63,"storeOrder":3.0,"storeLocationNum":1170,"name":"Chamoy","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":64,"storeOrder":3.0,"storeLocationNum":720,"name":"Aluminium individual Wrap para burrito","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":65,"storeOrder":3.0,"storeLocationNum":730,"name":"Aluminum Large (18\"x500ft)","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":66,"storeOrder":3.0,"storeLocationNum":750,"name":"Plastic Wrap Large (18\"x2000ft)","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":67,"storeOrder":3.0,"storeLocationNum":760,"name":"Plastic Wrap Meduim (12in x 3000\")","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":68,"storeOrder":3.0,"storeLocationNum":450,"name":"Mango Flavor For Margs","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":69,"storeOrder":3.0,"storeLocationNum":450,"name":"Strawberry Flavor For Margs","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":70,"storeOrder":3.3,"storeLocationNum":2000,"name":"Sharpies","location":"Cashier area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":71,"storeOrder":3.4,"storeLocationNum":330,"name":"Tajin","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":72,"storeOrder":3.4,"storeLocationNum":860,"name":"Plastic Knives Heavy Weight","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":73,"storeOrder":3.4,"storeLocationNum":870,"name":"Plastic Spoons Heavy Weight","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":74,"storeOrder":3.4,"storeLocationNum":710,"name":"Tooth Picks","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":75,"storeOrder":3.5,"storeLocationNum":430,"name":"Crushed Tomatillo","location":"Can area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":76,"storeOrder":3.5,"storeLocationNum":410,"name":"Sliced Jalapeños","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":77,"storeOrder":3.5,"storeLocationNum":420,"name":"Sliced Olives","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":78,"storeOrder":3.5,"storeLocationNum":1140,"name":"Salsa Mexicana Embassa","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":79,"storeOrder":3.5,"storeLocationNum":1250,"name":"White towles","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":80,"storeOrder":3.5,"storeLocationNum":470,"name":"Condensed Milk (For Flan)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":81,"storeOrder":3.5,"storeLocationNum":480,"name":"Evaporated Milk (For Flan)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":82,"storeOrder":3.5,"storeLocationNum":420,"name":"Chicken Stock (Caldo De pollo)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":83,"storeOrder":3.55,"storeLocationNum":450,"name":"Tequila","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":84,"storeOrder":3.55,"storeLocationNum":830,"name":"Latex Disposable Gloves-L","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":85,"storeOrder":3.55,"storeLocationNum":840,"name":"Latex Disposable Gloves-M","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":86,"storeOrder":3.55,"storeLocationNum":1240,"name":"To Go bags Big","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":87,"storeOrder":3.7,"storeLocationNum":240,"name":"Sanitizing tablets","location":"Under Hand Sink","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":88,"storeOrder":3.7,"storeLocationNum":250,"name":"Glass Cleaner","location":"Under Hand Sink","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":89,"storeOrder":3.7,"storeLocationNum":260,"name":"Hand Soap","location":"Under Hand Sink","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":90,"storeOrder":4.0,"storeLocationNum":1130,"name":"Light Chilli Powder (New Mexico)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":91,"storeOrder":4.0,"storeLocationNum":440,"name":"Fryer Oil Filters","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":92,"storeOrder":4.0,"storeLocationNum":280,"name":"Bleach","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":93,"storeOrder":4.0,"storeLocationNum":290,"name":"Pinesol","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":94,"storeOrder":4.0,"storeLocationNum":300,"name":"Green Scotch Brite","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":95,"storeOrder":4.0,"storeLocationNum":310,"name":"Steel Wool (esponja de metal)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":96,"storeOrder":4.0,"storeLocationNum":320,"name":"Grill Brick","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":97,"storeOrder":4.0,"storeLocationNum":340,"name":"Tomato Bouillon With Chicken (Knorr)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":98,"storeOrder":4.0,"storeLocationNum":350,"name":"Salsa Inglesa","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":99,"storeOrder":4.0,"storeLocationNum":360,"name":"Apple Cider Vinegar","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":100,"storeOrder":4.0,"storeLocationNum":390,"name":"Vanilla (For Flan)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":101,"storeOrder":4.0,"storeLocationNum":530,"name":"Granulated Garlic","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":102,"storeOrder":4.0,"storeLocationNum":540,"name":"Groud Cumin","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":103,"storeOrder":4.0,"storeLocationNum":550,"name":"Ground Black Pepper","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":104,"storeOrder":4.0,"storeLocationNum":540,"name":"Marjoarn","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":105,"storeOrder":4.0,"storeLocationNum":540,"name":"Thyme","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":106,"storeOrder":4.0,"storeLocationNum":560,"name":"Beef Base","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":107,"storeOrder":4.0,"storeLocationNum":560,"name":"Ground Cinnamon","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":108,"storeOrder":4.0,"storeLocationNum":560,"name":"Red Chilli Flakes","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":109,"storeOrder":4.0,"storeLocationNum":580,"name":"Whole Mexican Oregano","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":110,"storeOrder":4.0,"storeLocationNum":590,"name":"Whole Pepper","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":111,"storeOrder":4.0,"storeLocationNum":600,"name":"Ground Cloves","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":112,"storeOrder":4.0,"storeLocationNum":610,"name":"Whole Cloves","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":113,"storeOrder":4.0,"storeLocationNum":770,"name":"Sandwich Bags for Portioning","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":114,"storeOrder":4.0,"storeLocationNum":1090,"name":"Taco Seasoning (McCormic)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":115,"storeOrder":4.0,"storeLocationNum":1180,"name":"Achiote","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":116,"storeOrder":4.0,"storeLocationNum":1190,"name":"Guajillo","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":117,"storeOrder":4.0,"storeLocationNum":1200,"name":"New Mexico","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":118,"storeOrder":4.0,"storeLocationNum":1210,"name":"Pasilla","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":119,"storeOrder":4.0,"storeLocationNum":1220,"name":"Chile de Arbol","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":120,"storeOrder":4.0,"storeLocationNum":1290,"name":"Mole Paste","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":121,"storeOrder":4.0,"storeLocationNum":450,"name":"Crisco (all vegy shortening)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":122,"storeOrder":4.0,"storeLocationNum":1040,"name":"Horchata Mix","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":123,"storeOrder":4.0,"storeLocationNum":500,"name":"Harina de tamales","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":124,"storeOrder":4.0,"storeLocationNum":570,"name":"Ground Paprika","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":125,"storeOrder":5.0,"storeLocationNum":160,"name":"Chicken Strips","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":126,"storeOrder":5.0,"storeLocationNum":150,"name":"Fries","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":127,"storeOrder":5.0,"storeLocationNum":210,"name":"Churros","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":128,"storeOrder":5.0,"storeLocationNum":2000,"name":"Pulpa de Aguacate","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":129,"storeOrder":5.0,"storeLocationNum":2000,"name":"Carne para menudo","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":130,"storeOrder":5.0,"storeLocationNum":80,"name":"Chorizo","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":131,"storeOrder":5.0,"storeLocationNum":210,"name":"Bacon 14/16 (tiras)","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":132,"storeOrder":5.0,"storeLocationNum":230,"name":"Mahi Mahi Taco pieces","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":133,"storeOrder":5.0,"storeLocationNum":1110,"name":"Bread for Tortas","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":134,"storeOrder":6.0,"storeLocationNum":510,"name":"Hoja para tamal","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":135,"storeOrder":6.0,"storeLocationNum":30,"name":"Potatoes","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":136,"storeOrder":6.0,"storeLocationNum":40,"name":"Yellow Onions","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":137,"storeOrder":6.0,"storeLocationNum":460,"name":"Frijoles","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":138,"storeOrder":6.0,"storeLocationNum":460,"name":"Parbroiled Rice","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":139,"storeOrder":6.0,"storeLocationNum":20,"name":"Avocado","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":140,"storeOrder":6.0,"storeLocationNum":620,"name":"To Go Boxes #1","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":141,"storeOrder":6.0,"storeLocationNum":630,"name":"To Go Boxes #3","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":142,"storeOrder":6.0,"storeLocationNum":640,"name":"To Go Boxes #8","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":143,"storeOrder":7.0,"storeLocationNum":10,"name":"Roma Tomatoes","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":144,"storeOrder":7.0,"storeLocationNum":50,"name":"Pineapple","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":145,"storeOrder":7.0,"storeLocationNum":90,"name":"Cilantro","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":146,"storeOrder":7.0,"storeLocationNum":110,"name":"Green Onion","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":147,"storeOrder":7.0,"storeLocationNum":120,"name":"Red Bell Peppers","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":148,"storeOrder":7.0,"storeLocationNum":120,"name":"Green Bell Peppers","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":149,"storeOrder":7.0,"storeLocationNum":120,"name":"Zuchinni Green","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":150,"storeOrder":7.0,"storeLocationNum":120,"name":"Squash Yellow","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":151,"storeOrder":7.0,"storeLocationNum":220,"name":"Huevo Liquido","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":152,"storeOrder":7.0,"storeLocationNum":130,"name":"Serranos","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":153,"storeOrder":7.0,"storeLocationNum":140,"name":"Iceberg Lettuce","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":154,"storeOrder":7.0,"storeLocationNum":170,"name":"Fancy Shred Jack Cheese Jack Chedar","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":155,"storeOrder":7.0,"storeLocationNum":170,"name":"Mozarela cheese","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":156,"storeOrder":7.0,"storeLocationNum":190,"name":"Boneless Skinless Chicken Thighs","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":157,"storeOrder":7.0,"storeLocationNum":200,"name":"Sour Cream Mexican Style","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":158,"storeOrder":7.0,"storeLocationNum":220,"name":"Large Eggs","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":159,"storeOrder":7.0,"storeLocationNum":70,"name":"Pealed Garlic","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":160,"storeOrder":7.0,"storeLocationNum":100,"name":"Jalapeños Fresh","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":161,"storeOrder":7.0,"storeLocationNum":60,"name":"Limes","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":162,"storeOrder":7.0,"storeLocationNum":180,"name":"Grated Queso Cotija","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":163,"storeOrder":7.0,"storeLocationNum":1100,"name":"Leche Para En Caja de Carton","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":164,"storeOrder":7.0,"storeLocationNum":370,"name":"Mayonnaise","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":165,"storeOrder":8.0,"storeLocationNum":1260,"name":"Bags for Rice","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":166,"storeOrder":8.0,"storeLocationNum":1270,"name":"White Garbage Bags 13 Gallons","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":167,"storeOrder":8.0,"storeLocationNum":1280,"name":"Black Garbage bags","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":168,"storeOrder":8.0,"storeLocationNum":270,"name":"Dawn Soap","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":169,"storeOrder":8.0,"storeLocationNum":1050,"name":"Toilet Paper","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":170,"storeOrder":8.0,"storeLocationNum":1080,"name":"Paper Towels (GR-340)","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""}];
+
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
 
 // ── UNIT HELPERS ──────────────────────────────────────────────────────────────
@@ -19,19 +37,11 @@ const needToOrder = (item, count) => {
   if (isNaN(n)||count===""||count===undefined) return 0;
   const shortage = Math.max(0,(item.par||0)-n);
   if (!shortage) return 0;
-  if (item.countPerOrderUnit && item.orderUnit) {
-    return Math.ceil(shortage / item.countPerOrderUnit);
-  }
+  if (item.countPerOrderUnit && item.orderUnit) return Math.ceil(shortage/item.countPerOrderUnit);
   return shortage;
 };
-
-const orderUnitLabel = (item) => {
-  if (item.countPerOrderUnit && item.orderUnit) return item.orderUnit;
-  return item.unit;
-};
-
+const orderUnitLabel = (item) => (item.countPerOrderUnit && item.orderUnit) ? item.orderUnit : item.unit;
 const countUnitLabel = (item) => item.unit;
-
 const statusOf = (count,par,reorder) => {
   if (count===""||count===null||count===undefined) return "neutral";
   const n=parseFloat(count);
@@ -41,83 +51,73 @@ const statusOf = (count,par,reorder) => {
 };
 const SC={critical:"#ef4444",low:"#f59e0b",good:"#22c55e",neutral:"#d1d5db"};
 
-function exportToExcel(items,counts){
+function exportInventory(items,counts){
   const rows=[...items].sort((a,b)=>a.storeOrder-b.storeOrder).map(item=>({
-    "Location #":item.storeOrder,"Store Location Code":item.storeLocationNum,"Item Name":item.name,
-    "In-House Location":item.location,"Category":item.category,
+    "In-House Location #":item.storeOrder,
+    "Store Location #":item.storeLocationNum,
+    "Item Name":item.name,
+    "In-House Location":item.location,
+    "Category":item.category,
     "Unit":item.unit,
     "Order Unit":item.orderUnit||"",
     "Per Order Unit":item.countPerOrderUnit||"",
-    "To Have (Par)":item.par||"","Reorder Point":item.reorder||"",
+    "To Have (Par)":item.par||"",
+    "Reorder Point":item.reorder||"",
     "On Hand (Last Count)":counts[item.id]!==undefined?counts[item.id]:"",
     "Need To Order":counts[item.id]!==undefined?(needToOrder(item,counts[item.id])||""):"",
-    "Frequency":item.frequency,"Active":item.active,"Vendor":item.vendor,"Notes":item.notes,
+    "Frequency":item.frequency,
+    "Active":item.active,
+    "Vendor":item.vendor,
+    "Notes":item.notes,
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws["!cols"]=[8,12,32,20,14,10,10,10,10,10,14,12,8,6,16,20].map(w=>({wch:w}));
+  ws["!cols"]=[10,12,32,20,14,8,10,10,10,10,14,12,8,6,16,20].map(w=>({wch:w}));
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Inventory");
   XLSX.writeFile(wb,`inventory-${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+function exportLists(locations, categories, units, vendors){
+  const wb = XLSX.utils.book_new();
+  const locRows = locations.map(l=>({ "In-House Location": l.name, "In-House Location #": l.code }));
+  const locWs = XLSX.utils.json_to_sheet(locRows);
+  locWs["!cols"] = [{ wch: 28 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, locWs, "In-House Location");
+  const vendorWs = XLSX.utils.json_to_sheet(vendors.map(v=>({ Vendor: v })));
+  vendorWs["!cols"] = [{ wch: 24 }];
+  XLSX.utils.book_append_sheet(wb, vendorWs, "Vendor");
+  const catWs = XLSX.utils.json_to_sheet(categories.map(c=>({ Category: c })));
+  catWs["!cols"] = [{ wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, catWs, "Category");
+  const unitWs = XLSX.utils.json_to_sheet(units.map(u=>({ Unit: u })));
+  unitWs["!cols"] = [{ wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, unitWs, "Units");
+  XLSX.writeFile(wb, `lists-${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
 function generatePO(orderItems, date){
   const sorted = [...orderItems].sort((a,b)=>a.storeLocationNum-b.storeLocationNum);
   const rows = sorted.map(item => {
-    const isCritical = parseFloat(item.count || 0) <= (item.reorder || 0);
-    const oUnit = orderUnitLabel(item);
-    const cUnit = countUnitLabel(item);
-    const parLabel = item.countPerOrderUnit && item.orderUnit
-      ? `${item.par} ${cUnit}`
-      : `${item.par} ${oUnit}`;
-    return `
-      <tr class="${isCritical ? "critical" : ""}">
-        <td>${escapeHtml(item.storeLocationNum)}</td>
-        <td>${escapeHtml(item.name)}</td>
-        <td><b>${escapeHtml(item.toOrder)} ${escapeHtml(oUnit)}</b></td>
-        <td>${escapeHtml(item.count || 0)} ${escapeHtml(cUnit)}</td>
-        <td>${parLabel}</td>
-        <td>${escapeHtml(item.location)}</td>
-        <td>${escapeHtml(item.vendor || "")}</td>
-      </tr>`;
+    const isCritical = parseFloat(item.count||0)<=(item.reorder||0);
+    const oUnit=orderUnitLabel(item), cUnit=countUnitLabel(item);
+    const parLabel=item.countPerOrderUnit&&item.orderUnit?`${item.par} ${cUnit}`:`${item.par} ${oUnit}`;
+    return `<tr class="${isCritical?"critical":""}">
+      <td>${escapeHtml(item.storeLocationNum)}</td><td>${escapeHtml(item.name)}</td>
+      <td><b>${escapeHtml(item.toOrder)} ${escapeHtml(oUnit)}</b></td>
+      <td>${escapeHtml(item.count||0)} ${escapeHtml(cUnit)}</td>
+      <td>${parLabel}</td><td>${escapeHtml(item.location)}</td><td>${escapeHtml(item.vendor||"")}</td></tr>`;
   }).join("");
-
-  return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Purchase Order - ${escapeHtml(date)}</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 32px; color: #111827; }
-    h1 { margin: 0 0 4px; }
-    .date { color: #6b7280; margin-bottom: 24px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; font-size: 13px; }
-    th { background: #f3f4f6; font-size: 12px; }
-    tr.critical td { background: #fee2e2; }
-    footer { margin-top: 36px; color: #6b7280; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <h1>PURCHASE ORDER</h1>
-  <div class="date">${escapeHtml(date)}</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Loc Code</th><th>Item</th><th>Qty to Order</th>
-        <th>On Hand</th><th>Par</th><th>Location</th><th>Vendor</th>
-      </tr>
-    </thead>
-    <tbody>${rows || "<tr><td colspan='7'>No items need to be ordered.</td></tr>"}</tbody>
-  </table>
-  <footer>Restaurant Inventory System</footer>
-</body>
-</html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"/>
+<title>Purchase Order - ${escapeHtml(date)}</title>
+<style>body{font-family:Arial,sans-serif;margin:32px;color:#111827}h1{margin:0 0 4px}.date{color:#6b7280;margin-bottom:24px}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #d1d5db;padding:8px;text-align:left;font-size:13px}th{background:#f3f4f6;font-size:12px}tr.critical td{background:#fee2e2}footer{margin-top:36px;color:#6b7280;font-size:12px}</style>
+</head><body><h1>PURCHASE ORDER</h1><div class="date">${escapeHtml(date)}</div>
+<table><thead><tr><th>Loc Code</th><th>Item</th><th>Qty to Order</th><th>On Hand</th><th>Par</th><th>Location</th><th>Vendor</th></tr></thead>
+<tbody>${rows||"<tr><td colspan='7'>No items need to be ordered.</td></tr>"}</tbody></table>
+<footer>Restaurant Inventory System</footer></body></html>`;
 }
 
 function escapeHtml(value){
-  return String(value ?? "")
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  return String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
 function EditCell({value,onSave,type="text",options=null,width=100}){
@@ -127,13 +127,7 @@ function EditCell({value,onSave,type="text",options=null,width=100}){
   const commit=()=>{try{onSave(type==="number"?(parseFloat(v)||0):v);}catch(e){}};
   if(options){
     const allOptions=options.includes(v)?options:[v,...options];
-    return(
-      <select ref={ref} value={v} style={{...s.inlineInput,width}}
-        onChange={e=>{setV(e.target.value);onSave(e.target.value);}}
-        onBlur={commit}>
-        {allOptions.map(o=><option key={o} value={o}>{o||"—"}</option>)}
-      </select>
-    );
+    return(<select ref={ref} value={v} style={{...s.inlineInput,width}} onChange={e=>{setV(e.target.value);onSave(e.target.value);}} onBlur={commit}>{allOptions.map(o=><option key={o} value={o}>{o||"—"}</option>)}</select>);
   }
   return(<input ref={ref} value={v} type={type==="number"?"number":"text"} style={{...s.inlineInput,width}} onChange={e=>setV(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")commit();if(e.key==="Escape")onSave(null);}}/>);
 }
@@ -141,6 +135,10 @@ function EditCell({value,onSave,type="text",options=null,width=100}){
 export default function App(){
   const [items,setItems]=useState(SOURCE_ITEMS);
   const [counts,setCounts]=useState({});
+  const [locations,setLocations]=useState(DEFAULT_LOCATIONS);
+  const [categories,setCategories]=useState(DEFAULT_CATEGORIES);
+  const [units,setUnits]=useState(DEFAULT_UNITS);
+  const [vendors,setVendors]=useState(DEFAULT_VENDORS);
   const [view,setView]=useState("count");
   const [search,setSearch]=useState("");
   const [filterLoc,setFilterLoc]=useState("All");
@@ -150,136 +148,163 @@ export default function App(){
   const [poHTML,setPoHTML]=useState(null);
   const [generating,setGenerating]=useState(false);
   const [saved,setSaved]=useState(false);
-  const [importStatus,setImportStatus]=useState(null); // { updated, added } | null
+  const [importStatus,setImportStatus]=useState(null);
   const importRef=useRef();
+  const importListsRef=useRef();
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  // Helper: look up location code by name
+  const locCode = (name) => locations.find(l=>l.name===name)?.code ?? null;
+  const locationNames = locations.map(l=>l.name);
 
   useEffect(() => {
     loadInventoryData().then((d) => {
+      if (d?.lists) {
+        if (d.lists.locations?.length) setLocations(d.lists.locations);
+        if (d.lists.categories?.length) setCategories(d.lists.categories);
+        if (d.lists.units?.length) setUnits(d.lists.units);
+        if (d.lists.vendors?.length) setVendors(d.lists.vendors);
+      }
       if (d?.items && d.items.length > 0) {
         const savedById = Object.fromEntries(d.items.map(i => [i.id, i]));
         const merged = SOURCE_ITEMS.map(item => {
-          const saved = savedById[item.id];
-          if (!saved) return item;
-          return {
-            ...item,
-            par: saved.par ?? item.par,
-            reorder: saved.reorder ?? item.reorder,
-            notes: saved.notes ?? item.notes,
-            location: saved.location ?? item.location,
-            category: saved.category ?? item.category,
-            unit: saved.unit ?? item.unit,
-            active: saved.active ?? item.active,
-            vendor: saved.vendor ?? item.vendor,
-            storeOrder: saved.storeOrder ?? item.storeOrder,
-            storeLocationNum: saved.storeLocationNum ?? item.storeLocationNum,
-            frequency: saved.frequency ?? item.frequency,
-            countPerOrderUnit: saved.countPerOrderUnit ?? item.countPerOrderUnit,
-            orderUnit: saved.orderUnit ?? item.orderUnit,
-          };
+          const sv = savedById[item.id];
+          if (!sv) return item;
+          return { ...item, par:sv.par??item.par, reorder:sv.reorder??item.reorder, notes:sv.notes??item.notes,
+            location:sv.location??item.location, category:sv.category??item.category, unit:sv.unit??item.unit,
+            active:sv.active??item.active, vendor:sv.vendor??item.vendor, storeOrder:sv.storeOrder??item.storeOrder,
+            storeLocationNum:sv.storeLocationNum??item.storeLocationNum, frequency:sv.frequency??item.frequency,
+            countPerOrderUnit:sv.countPerOrderUnit??item.countPerOrderUnit, orderUnit:sv.orderUnit??item.orderUnit };
         });
-        const sourceIds = new Set(SOURCE_ITEMS.map(i => i.id));
-        const addedItems = d.items.filter(i => !sourceIds.has(i.id));
-        setItems([...merged, ...addedItems]);
+        const sourceIds = new Set(SOURCE_ITEMS.map(i=>i.id));
+        setItems([...merged, ...d.items.filter(i=>!sourceIds.has(i.id))]);
       }
     });
   }, []);
 
-  const persist=useCallback((ni,nc)=>{setItems(ni);setCounts(nc);saveInventoryData({items:ni,counts:nc});setSaved(true);setTimeout(()=>setSaved(false),1500);},[]);
+  const persistAll = useCallback((ni,nc,nloc,ncat,nunit,nvend) => {
+    const li = nloc ?? locations;
+    const ca = ncat ?? categories;
+    const un = nunit ?? units;
+    const ve = nvend ?? vendors;
+    setItems(ni); setCounts(nc);
+    if(nloc) setLocations(nloc);
+    if(ncat) setCategories(ncat);
+    if(nunit) setUnits(nunit);
+    if(nvend) setVendors(nvend);
+    saveInventoryData({ items:ni, counts:nc, lists:{ locations:li, categories:ca, units:un, vendors:ve } });
+    setSaved(true); setTimeout(()=>setSaved(false),1500);
+  }, [locations,categories,units,vendors]);
 
-  const updateField=(id,field,value)=>{if(value===null){setEditingCell(null);return;}persist(items.map(i=>i.id===id?{...i,[field]:value}:i),counts);setEditingCell(null);};
+  const persist = useCallback((ni,nc) => persistAll(ni,nc,null,null,null,null), [persistAll]);
+
+  // When location changes on an item, auto-update storeOrder from location code
+  const updateField = (id, field, value) => {
+    if (value===null) { setEditingCell(null); return; }
+    let extra = {};
+    if (field==="location") {
+      const code = locCode(value);
+      if (code !== null) extra = { storeOrder: code };
+    }
+    persist(items.map(i=>i.id===id?{...i,[field]:value,...extra}:i), counts);
+    setEditingCell(null);
+  };
   const updateCount=(id,val)=>persist(items,{...counts,[id]:val});
   const deleteItem=(id)=>{if(!confirm("Delete this item?"))return;persist(items.filter(i=>i.id!==id),counts);};
-  const addItem=()=>{const item={id:uid(),storeOrder:items.length+1,storeLocationNum:0,name:"New Item",location:LOCATIONS[0]||"Other",category:"",unit:"each",par:0,reorder:0,notes:"",frequency:1,active:"Yes",vendor:"Restaurant Depot"};persist([...items,item],counts);};
+  const addItem=()=>{
+    const defaultLoc = locations[0];
+    const item={id:uid(),storeOrder:defaultLoc?.code??1,storeLocationNum:0,name:"New Item",
+      location:defaultLoc?.name??"Other",category:"",unit:units[0]??"each",par:0,reorder:0,
+      notes:"",frequency:1,active:"Yes",vendor:vendors[0]??"Restaurant Depot"};
+    persist([...items,item],counts);
+  };
 
-  // ── IMPORT ────────────────────────────────────────────────────────────────
-  function handleImport(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = ""; // reset so same file can be re-imported
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const wb = XLSX.read(evt.target.result, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws);
-
-        // Build name → id lookup (case-insensitive)
-        const byName = {};
-        items.forEach(i => { byName[i.name.toLowerCase().trim()] = i.id; });
-
-        let updated = 0, added = 0;
-        const updatedItems = [...items];
-
-        rows.forEach(row => {
-          const name = String(row["Item Name"] || "").trim();
-          if (!name) return;
-
-          // Helper: grab a field, return undefined if blank/missing
-          const str = (key) => {
-            const v = row[key];
-            return v !== undefined && v !== "" ? String(v).trim() : undefined;
+  // ── IMPORT INVENTORY ──────────────────────────────────────────────────────
+  function handleImport(e){
+    const file=e.target.files?.[0]; if(!file)return; e.target.value="";
+    const reader=new FileReader();
+    reader.onload=(evt)=>{
+      try{
+        const wb=XLSX.read(evt.target.result,{type:"array"});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws);
+        const byName={};
+        items.forEach(i=>{byName[i.name.toLowerCase().trim()]=i.id;});
+        let updated=0,added=0;
+        const updatedItems=[...items];
+        rows.forEach(row=>{
+          const name=String(row["Item Name"]||"").trim(); if(!name)return;
+          const str=(k)=>{const v=row[k];return v!==undefined&&v!==""?String(v).trim():undefined;};
+          const num=(k)=>{const v=row[k],n=Number(v);return v!==undefined&&v!==""&&!isNaN(n)?n:undefined;};
+          const fields={
+            storeOrder:num("In-House Location #"),
+            storeLocationNum:num("Store Location #"),
+            par:num("To Have (Par)"), reorder:num("Reorder Point"),
+            countPerOrderUnit:num("Per Order Unit"),
+            location:str("In-House Location"), category:str("Category"),
+            unit:str("Unit"), orderUnit:str("Order Unit"),
+            active:str("Active"), vendor:str("Vendor"), notes:str("Notes"),
           };
-          const num = (key) => {
-            const v = row[key];
-            const n = Number(v);
-            return v !== undefined && v !== "" && !isNaN(n) ? n : undefined;
-          };
-
-          const fields = {
-            storeOrder:          num("Location #"),
-            storeLocationNum:    num("Store Location Code"),
-            par:                 num("To Have (Par)"),
-            reorder:             num("Reorder Point"),
-            countPerOrderUnit:   num("Per Order Unit"),
-            location:            str("In-House Location"),
-            category:            str("Category"),
-            unit:                str("Unit"),
-            orderUnit:           str("Order Unit"),
-            active:              str("Active"),
-            vendor:              str("Vendor"),
-            notes:               str("Notes"),
-          };
-          // Drop undefined keys so we don't accidentally overwrite with undefined
-          Object.keys(fields).forEach(k => fields[k] === undefined && delete fields[k]);
-
-          const id = byName[name.toLowerCase()];
-          if (id !== undefined) {
-            const idx = updatedItems.findIndex(i => i.id === id);
-            if (idx !== -1) {
-              updatedItems[idx] = { ...updatedItems[idx], ...fields };
-              updated++;
-            }
+          Object.keys(fields).forEach(k=>fields[k]===undefined&&delete fields[k]);
+          const id=byName[name.toLowerCase()];
+          if(id!==undefined){
+            const idx=updatedItems.findIndex(i=>i.id===id);
+            if(idx!==-1){updatedItems[idx]={...updatedItems[idx],...fields};updated++;}
           } else {
-            // Brand-new item not in the master list
-            updatedItems.push({
-              id: uid(),
-              name,
-              storeOrder:          fields.storeOrder ?? updatedItems.length + 1,
-              storeLocationNum:    fields.storeLocationNum ?? 0,
-              location:            fields.location ?? "Other",
-              category:            fields.category ?? "",
-              unit:                fields.unit ?? "each",
-              par:                 fields.par ?? 0,
-              reorder:             fields.reorder ?? 0,
-              notes:               fields.notes ?? "",
-              frequency:           1,
-              active:              fields.active ?? "Yes",
-              vendor:              fields.vendor ?? "Restaurant Depot",
-              orderUnit:           fields.orderUnit,
-              countPerOrderUnit:   fields.countPerOrderUnit,
-            });
+            updatedItems.push({id:uid(),name,storeOrder:fields.storeOrder??updatedItems.length+1,
+              storeLocationNum:fields.storeLocationNum??0,location:fields.location??locations[0]?.name??"Other",
+              category:fields.category??"",unit:fields.unit??units[0]??"each",par:fields.par??0,
+              reorder:fields.reorder??0,notes:fields.notes??"",frequency:1,
+              active:fields.active??"Yes",vendor:fields.vendor??vendors[0]??"Restaurant Depot",
+              orderUnit:fields.orderUnit,countPerOrderUnit:fields.countPerOrderUnit});
             added++;
           }
         });
+        persist(updatedItems,counts);
+        setImportStatus({updated,added});
+        setTimeout(()=>setImportStatus(null),4000);
+      }catch(err){alert("Import failed: "+err.message);}
+    };
+    reader.readAsArrayBuffer(file);
+  }
 
-        persist(updatedItems, counts);
-        setImportStatus({ updated, added });
-        setTimeout(() => setImportStatus(null), 4000);
-      } catch (err) {
-        alert("Import failed: " + err.message);
-      }
+  // ── IMPORT LISTS ──────────────────────────────────────────────────────────
+  function handleImportLists(e){
+    const file=e.target.files?.[0]; if(!file)return; e.target.value="";
+    const reader=new FileReader();
+    reader.onload=(evt)=>{
+      try{
+        const wb=XLSX.read(evt.target.result,{type:"array"});
+        let newLoc=locations, newCat=categories, newUnit=units, newVend=vendors;
+
+        const locSheet=wb.Sheets["In-House Location"];
+        if(locSheet){
+          const rows=XLSX.utils.sheet_to_json(locSheet);
+          const parsed=rows.map(r=>({name:String(r["In-House Location"]||"").trim(),code:Number(r["In-House Location #"])||0})).filter(r=>r.name);
+          if(parsed.length) newLoc=parsed;
+        }
+        const vendSheet=wb.Sheets["Vendor"];
+        if(vendSheet){
+          const rows=XLSX.utils.sheet_to_json(vendSheet);
+          const parsed=rows.map(r=>String(r["Vendor"]||"").trim()).filter(Boolean);
+          if(parsed.length) newVend=parsed;
+        }
+        const catSheet=wb.Sheets["Category"];
+        if(catSheet){
+          const rows=XLSX.utils.sheet_to_json(catSheet);
+          const parsed=rows.map(r=>String(r["Category"]||"").trim()).filter(Boolean);
+          if(parsed.length) newCat=parsed;
+        }
+        const unitSheet=wb.Sheets["Units"];
+        if(unitSheet){
+          const rows=XLSX.utils.sheet_to_json(unitSheet);
+          const parsed=rows.map(r=>String(r["Unit"]||r["Count Unit"]||"").trim()).filter(Boolean);
+          if(parsed.length) newUnit=parsed;
+        }
+        persistAll(items,counts,newLoc,newCat,newUnit,newVend);
+        setImportStatus({updated:0,added:0,lists:true});
+        setTimeout(()=>setImportStatus(null),4000);
+      }catch(err){alert("Lists import failed: "+err.message);}
     };
     reader.readAsArrayBuffer(file);
   }
@@ -291,32 +316,24 @@ export default function App(){
     if(countedOnly&&(counts[item.id]===undefined||counts[item.id]===""))return false;
     return true;
   });
-  const filteredManage=[
-    ...filtered.filter(i=>i.active==="Yes"),
-    ...filtered.filter(i=>i.active!=="Yes"),
-  ];
-
+  const filteredManage=[...filtered.filter(i=>i.active==="Yes"),...filtered.filter(i=>i.active!=="Yes")];
   const countedCount=Object.values(counts).filter(v=>v!=="").length;
   const orderItems=sorted.filter(i=>i.active==="Yes").map(i=>({...i,count:counts[i.id]??"",toOrder:needToOrder(i,counts[i.id]??"")})).filter(i=>i.toOrder>0).sort((a,b)=>a.storeLocationNum-b.storeLocationNum);
   const isEditing=(id,field)=>editingCell?.itemId===id&&editingCell?.field===field;
 
-  function handlePO(){setGenerating(true);setPoHTML(null);try{const h=generatePO(orderItems,date);setPoHTML(h);setView("order");}catch{alert("Failed, try again.");}setGenerating(false);}
+  function handlePO(){setGenerating(true);setPoHTML(null);try{setPoHTML(generatePO(orderItems,date));setView("order");}catch{alert("Failed.");}setGenerating(false);}
   function downloadPO(){const b=new Blob([poHTML],{type:"text/html"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`purchase-order-${new Date().toISOString().slice(0,10)}.html`;a.click();URL.revokeObjectURL(u);}
 
   return(
     <div style={s.app}>
-      {/* Hidden file input for import */}
       <input ref={importRef} type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={handleImport}/>
+      <input ref={importListsRef} type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={handleImportLists}/>
 
       <div style={s.header}>
         <div style={s.hL}><span style={{fontSize:24}}>🍽️</span><div><div style={s.title}>Rio Bravito Inventory</div><div style={s.sub}>{date}</div></div></div>
         <div style={s.hR}>
           {saved&&<span style={s.savedBadge}>✓ Saved</span>}
-          {importStatus&&(
-            <span style={s.importBadge}>
-              ✓ {importStatus.updated} updated{importStatus.added>0?`, ${importStatus.added} added`:""}
-            </span>
-          )}
+          {importStatus&&<span style={s.importBadge}>{importStatus.lists?"✓ Lists updated":`✓ ${importStatus.updated} updated${importStatus.added>0?`, ${importStatus.added} added`:""}`}</span>}
           <div style={s.prog}><div style={s.progBar}><div style={{...s.progFill,width:`${items.length?(countedCount/items.length)*100:0}%`}}/></div><span style={s.progLbl}>{countedCount}/{items.length}</span></div>
         </div>
       </div>
@@ -327,13 +344,15 @@ export default function App(){
         ))}
       </div>
 
+      {/* ── COUNT TAB ── */}
       {view==="count"&&(
         <div style={s.content}>
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search items..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <div style={s.fRow}>
               <select style={s.sel} value={filterLoc} onChange={e=>setFilterLoc(e.target.value)}>
-                <option value="All">All Locations</option>{LOCATIONS.map(l=><option key={l} value={l}>{l}</option>)}
+                <option value="All">All Locations</option>
+                {[...locations].sort((a,b)=>a.code-b.code).map(l=><option key={l.name} value={l.name}>{l.code} · {l.name}</option>)}
               </select>
               <select style={s.sel} value={filterActive} onChange={e=>setFilterActive(e.target.value)}>
                 <option value="Active">Active Only</option><option value="All">All</option><option value="Inactive">Inactive</option>
@@ -345,19 +364,17 @@ export default function App(){
             {filtered.map(item=>{
               const val=counts[item.id]??"";
               const st=statusOf(val,item.par,item.reorder);
-              const cLabel=countUnitLabel(item);
-              const oLabel=orderUnitLabel(item);
+              const cLabel=countUnitLabel(item), oLabel=orderUnitLabel(item);
+              const code=locCode(item.location);
               return(
                 <div key={item.id} style={{...s.card,borderLeft:`4px solid ${SC[st]}`,opacity:item.active==="No"?0.55:1}}>
                   <div style={s.iName}>{item.name}{item.active==="No"&&<span style={s.inactBadge}>INACTIVE</span>}</div>
                   <div style={s.metaRow}>
-                    <span style={s.locBadge}>📍 {item.location}</span>
+                    <span style={s.locBadge}>📍 {code!==null&&<b>{code} · </b>}{item.location}</span>
                     {item.category&&<span style={s.catBadge}>{item.category}</span>}
                     <span style={s.mTxt}>Par: <b>{item.par||"—"} {cLabel}</b></span>
                     <span style={s.mTxt}>Reorder at: <b>{item.reorder||"—"}</b></span>
-                    {item.countPerOrderUnit&&item.orderUnit&&(
-                      <span style={s.mTxt}>Orders by: <b>{item.countPerOrderUnit} {cLabel} = 1 {oLabel}</b></span>
-                    )}
+                    {item.countPerOrderUnit&&item.orderUnit&&<span style={s.mTxt}>Orders by: <b>{item.countPerOrderUnit} {cLabel} = 1 {oLabel}</b></span>}
                     {item.notes&&<span style={s.noteTxt}>📝 {item.notes}</span>}
                   </div>
                   <div style={s.qtyLbl}>📥 QTY ON HAND ({cLabel}):</div>
@@ -368,9 +385,7 @@ export default function App(){
                     <span style={s.uLbl}>{cLabel}</span>
                   </div>
                   {val===""&&<div style={s.uncounted}>👆 Tap box above to enter how many you have</div>}
-                  {val!==""&&parseFloat(val)<=(item.reorder||0)&&(
-                    <div style={s.alertB}>⚠️ Below reorder point — need to order {needToOrder(item,val)} {oLabel}</div>
-                  )}
+                  {val!==""&&parseFloat(val)<=(item.reorder||0)&&<div style={s.alertB}>⚠️ Below reorder point — need to order {needToOrder(item,val)} {oLabel}</div>}
                 </div>
               );
             })}
@@ -384,27 +399,29 @@ export default function App(){
         </div>
       )}
 
+      {/* ── MANAGE TAB ── */}
       {view==="manage"&&(
         <div style={s.content}>
           <div style={s.mHeader}>
             <div><div style={{fontWeight:700,fontSize:15}}>Item Management</div><div style={{fontSize:11,color:"#6b7280"}}>{items.length} items · Tap any field to edit</div></div>
-            <div style={{display:"flex",gap:7,flexWrap:"wrap",justifyContent:"flex-end"}}>
-              <button style={s.importBtn} onClick={()=>importRef.current.click()}>⬆️ Import .xlsx</button>
-              <button style={s.xlsBtn} onClick={()=>exportToExcel(items,counts)}>⬇️ Export .xlsx</button>
-              <button style={s.addBtn} onClick={addItem}>+ Add</button>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
+              <button style={s.importBtn} onClick={()=>importRef.current.click()}>⬆️ Import Items</button>
+              <button style={s.xlsBtn}    onClick={()=>exportInventory(items,counts)}>⬇️ Export Items</button>
+              <button style={s.listsImportBtn} onClick={()=>importListsRef.current.click()}>⬆️ Import Lists</button>
+              <button style={s.listsBtn}  onClick={()=>exportLists(locations,categories,units,vendors)}>⬇️ Export Lists</button>
+              <button style={s.addBtn}    onClick={addItem}>+ Add</button>
             </div>
           </div>
-
-          {/* Import instructions banner */}
           <div style={s.importHint}>
-            💡 <b>Import workflow:</b> Export → edit Par, Reorder Point, Unit, Order Unit, Notes, Location, Active, etc. in Excel → Import back. Rows are matched by <b>Item Name</b>.
+            💡 <b>Items workflow:</b> Export Items → edit in Excel (match by Item Name) → Import Items.<br/>
+            📋 <b>Lists workflow:</b> Export Lists → add/edit locations (with codes), categories, units, vendors → Import Lists. Changing a location auto-fills its code.
           </div>
-
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <div style={s.fRow}>
               <select style={s.sel} value={filterLoc} onChange={e=>setFilterLoc(e.target.value)}>
-                <option value="All">All Locations</option>{LOCATIONS.map(l=><option key={l} value={l}>{l}</option>)}
+                <option value="All">All Locations</option>
+                {[...locations].sort((a,b)=>a.code-b.code).map(l=><option key={l.name} value={l.name}>{l.code} · {l.name}</option>)}
               </select>
               <select style={s.sel} value={filterActive} onChange={e=>setFilterActive(e.target.value)}>
                 <option value="Active">Active</option><option value="All">All</option><option value="Inactive">Inactive</option>
@@ -416,8 +433,8 @@ export default function App(){
               <div key={item.id} style={{...s.mCard,opacity:item.active==="No"?0.6:1}}>
                 <div style={s.mTop}>
                   <div style={s.fg}>
-                    <div style={s.fl}>Order #</div>
-                    {isEditing(item.id,"storeOrder")?<EditCell value={item.storeOrder} type="number" width={55} onSave={v=>updateField(item.id,"storeOrder",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeOrder"})}>{item.storeOrder}</span>}
+                    <div style={s.fl}>Loc #</div>
+                    <span style={{...s.otag,background:"#dbeafe",color:"#1e40af"}}>{item.storeOrder}</span>
                   </div>
                   <div style={{...s.fg,flex:1}}>
                     <div style={s.fl}>Item Name</div>
@@ -427,40 +444,51 @@ export default function App(){
                   <button style={s.delBtn} onClick={()=>deleteItem(item.id)}>✕</button>
                 </div>
                 <div style={s.mFields}>
-                  {/* Dropdown fields */}
-                  {[
-                    ["location","Location",LOCATIONS,140],
-                    ["category","Category",CATEGORIES,120],
-                    ["unit","Unit",UNITS,90],
-                    ["orderUnit","Order Unit",["(same as unit)",...UNITS],110],
-                  ].map(([field,label,opts,w])=>{
-                    const displayVal = field==="orderUnit"
-                      ? (item[field]||"(same as unit)")
-                      : item[field];
-                    const editVal = field==="orderUnit"
-                      ? (item[field]||"(same as unit)")
-                      : item[field];
-                    return(
-                      <div key={field} style={s.fg}><div style={s.fl}>{label}</div>
-                        {isEditing(item.id,field)
-                          ? <EditCell value={editVal} options={opts} width={w}
-                              onSave={v=>updateField(item.id,field,v==="(same as unit)"?"":v)}/>
-                          : <span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field})}>{displayVal||"—"}</span>}
-                      </div>
-                    );
-                  })}
-                  {/* Text / number fields */}
-                  {[
-                    ["par","Par","number",60],
-                    ["reorder","Reorder At","number",60],
-                    ["countPerOrderUnit","Per Order Unit","number",60],
-                    ["vendor","Vendor","text",140],
-                    ["notes","Notes","text",180],
-                  ].map(([field,label,type,w])=>(
+                  {/* Location dropdown — auto-fills code */}
+                  <div style={s.fg}>
+                    <div style={s.fl}>Location</div>
+                    {isEditing(item.id,"location")
+                      ? <EditCell value={item.location} options={[...locationNames].sort()} width={160}
+                          onSave={v=>updateField(item.id,"location",v)}/>
+                      : <span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"location"})}>
+                          {locCode(item.location)!==null&&<span style={{color:"#6b7280",fontSize:11}}>{locCode(item.location)} · </span>}{item.location||"—"}
+                        </span>}
+                  </div>
+                  {/* Store Location # (manual override) */}
+                  <div style={s.fg}>
+                    <div style={s.fl}>Store Loc #</div>
+                    {isEditing(item.id,"storeLocationNum")?<EditCell value={item.storeLocationNum} type="number" width={65} onSave={v=>updateField(item.id,"storeLocationNum",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeLocationNum"})}>{item.storeLocationNum}</span>}
+                  </div>
+                  {/* Category */}
+                  <div style={s.fg}>
+                    <div style={s.fl}>Category</div>
+                    {isEditing(item.id,"category")?<EditCell value={item.category} options={["", ...categories]} width={120} onSave={v=>updateField(item.id,"category",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"category"})}>{item.category||"—"}</span>}
+                  </div>
+                  {/* Unit */}
+                  <div style={s.fg}>
+                    <div style={s.fl}>Unit</div>
+                    {isEditing(item.id,"unit")?<EditCell value={item.unit} options={units} width={90} onSave={v=>updateField(item.id,"unit",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"unit"})}>{item.unit||"—"}</span>}
+                  </div>
+                  {/* Order Unit */}
+                  <div style={s.fg}>
+                    <div style={s.fl}>Order Unit</div>
+                    {isEditing(item.id,"orderUnit")?<EditCell value={item.orderUnit||"(same as unit)"} options={["(same as unit)",...units]} width={110} onSave={v=>updateField(item.id,"orderUnit",v==="(same as unit)"?"":v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"orderUnit"})}>{item.orderUnit||"(same)"}</span>}
+                  </div>
+                  {/* Vendor */}
+                  <div style={s.fg}>
+                    <div style={s.fl}>Vendor</div>
+                    {isEditing(item.id,"vendor")?<EditCell value={item.vendor} options={vendors} width={140} onSave={v=>updateField(item.id,"vendor",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"vendor"})}>{item.vendor||"—"}</span>}
+                  </div>
+                  {/* Numeric fields */}
+                  {[["par","Par","number",60],["reorder","Reorder At","number",60],["countPerOrderUnit","Per Order Unit","number",60]].map(([field,label,type,w])=>(
                     <div key={field} style={s.fg}><div style={s.fl}>{label}</div>
                       {isEditing(item.id,field)?<EditCell value={item[field]??""} type={type} width={w} onSave={v=>updateField(item.id,field,v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field})}>{item[field]||"—"}</span>}
                     </div>
                   ))}
+                  {/* Notes */}
+                  <div style={s.fg}><div style={s.fl}>Notes</div>
+                    {isEditing(item.id,"notes")?<EditCell value={item.notes??""} width={180} onSave={v=>updateField(item.id,"notes",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"notes"})}>{item.notes||"—"}</span>}
+                  </div>
                 </div>
               </div>
             ))}
@@ -468,6 +496,7 @@ export default function App(){
         </div>
       )}
 
+      {/* ── ORDER TAB ── */}
       {view==="order"&&(
         <div style={s.content}>
           {!poHTML?(
@@ -481,7 +510,7 @@ export default function App(){
               <div style={s.poBar}>
                 <span style={{fontWeight:700,color:"#16a34a",fontSize:14}}>✅ Purchase Order Ready</span>
                 <div style={{display:"flex",gap:7}}>
-                  <button style={s.xlsBtn} onClick={()=>exportToExcel(items,counts)}>⬇️ Export .xlsx</button>
+                  <button style={s.xlsBtn} onClick={()=>exportInventory(items,counts)}>⬇️ Export .xlsx</button>
                   <button style={s.addBtn} onClick={downloadPO}>⬇️ Download PO</button>
                 </div>
               </div>
@@ -494,18 +523,12 @@ export default function App(){
                       <div>
                         <div style={{fontWeight:700,fontSize:14}}>{item.name}</div>
                         <div style={{fontSize:11,color:"#6b7280"}}>📍 {item.location} · {item.vendor}</div>
-                        {item.countPerOrderUnit&&item.orderUnit&&(
-                          <div style={{fontSize:11,color:"#6b7280"}}>
-                            Have: {item.count||0} {countUnitLabel(item)} · Par: {item.par} {countUnitLabel(item)}
-                          </div>
-                        )}
+                        {item.countPerOrderUnit&&item.orderUnit&&<div style={{fontSize:11,color:"#6b7280"}}>Have: {item.count||0} {countUnitLabel(item)} · Par: {item.par} {countUnitLabel(item)}</div>}
                       </div>
                     </div>
                     <div style={{textAlign:"right"}}>
                       <div style={{fontWeight:700,color:"#1a1a2e",fontSize:14}}>Order: {item.toOrder} {orderUnitLabel(item)}</div>
-                      {!(item.countPerOrderUnit&&item.orderUnit)&&(
-                        <div style={{fontSize:11,color:"#9ca3af"}}>Have: {item.count||0} / Par: {item.par}</div>
-                      )}
+                      {!(item.countPerOrderUnit&&item.orderUnit)&&<div style={{fontSize:11,color:"#9ca3af"}}>Have: {item.count||0} / Par: {item.par}</div>}
                     </div>
                   </div>
                 ))}
@@ -525,8 +548,10 @@ const s={
   title:{fontSize:19,fontWeight:700},sub:{fontSize:10,opacity:0.6,marginTop:1},
   savedBadge:{background:"#22c55e",color:"#fff",borderRadius:12,padding:"2px 10px",fontSize:11,fontWeight:700},
   importBadge:{background:"#3b82f6",color:"#fff",borderRadius:12,padding:"2px 10px",fontSize:11,fontWeight:700},
-  prog:{display:"flex",alignItems:"center",gap:6},progBar:{width:70,height:6,background:"rgba(255,255,255,0.2)",borderRadius:3,overflow:"hidden"},
-  progFill:{height:"100%",background:"#22c55e",borderRadius:3,transition:"width 0.3s"},progLbl:{fontSize:12,opacity:0.75},
+  prog:{display:"flex",alignItems:"center",gap:6},
+  progBar:{width:70,height:6,background:"rgba(255,255,255,0.2)",borderRadius:3,overflow:"hidden"},
+  progFill:{height:"100%",background:"#22c55e",borderRadius:3,transition:"width 0.3s"},
+  progLbl:{fontSize:12,opacity:0.75},
   nav:{display:"flex",background:"#fff",borderBottom:"1px solid #e5e7eb",position:"sticky",top:53,zIndex:40},
   navBtn:{flex:1,padding:"11px 4px",border:"none",background:"transparent",fontSize:13,fontWeight:500,cursor:"pointer",color:"#6b7280",borderBottom:"3px solid transparent"},
   navA:{color:"#1a1a2e",borderBottom:"3px solid #1a1a2e",fontWeight:700},
@@ -554,10 +579,12 @@ const s={
   fab:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:720,background:"linear-gradient(transparent,#f7f5f0 55%)",padding:"18px 14px 14px",boxSizing:"border-box"},
   fabBtn:{width:"100%",padding:14,background:"#1a1a2e",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:0.3},
   mHeader:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8},
-  importHint:{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#1e40af",marginBottom:10,textAlign:"left",lineHeight:1.5},
-  addBtn:{background:"#1a1a2e",color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:600,cursor:"pointer"},
-  xlsBtn:{background:"#16a34a",color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:600,cursor:"pointer"},
-  importBtn:{background:"#2563eb",color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontSize:13,fontWeight:600,cursor:"pointer"},
+  importHint:{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#1e40af",marginBottom:10,textAlign:"left",lineHeight:1.6},
+  addBtn:{background:"#1a1a2e",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
+  xlsBtn:{background:"#16a34a",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
+  importBtn:{background:"#2563eb",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
+  listsBtn:{background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
+  listsImportBtn:{background:"#9333ea",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
   mCard:{background:"#fff",borderRadius:10,padding:"10px 12px",border:"1px solid #e5e7eb",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"},
   mTop:{display:"flex",alignItems:"center",gap:8,marginBottom:8},
   mFields:{display:"flex",flexWrap:"wrap",gap:10},
@@ -565,7 +592,7 @@ const s={
   fl:{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:0.4},
   ef:{fontSize:13,color:"#111827",cursor:"pointer",borderBottom:"1px dashed #d1d5db",padding:"2px 0",minWidth:30,display:"inline-block"},
   inlineInput:{fontSize:13,padding:"2px 6px",border:"2px solid #3b82f6",borderRadius:6,outline:"none",fontFamily:"inherit"},
-  otag:{background:"#e5e7eb",color:"#374151",borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700,whiteSpace:"nowrap",cursor:"pointer"},
+  otag:{background:"#e5e7eb",color:"#374151",borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"},
   actBtn:{border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"},
   delBtn:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:7,padding:"4px 10px",fontSize:13,cursor:"pointer"},
   oPrompt:{textAlign:"center",padding:"60px 20px"},
