@@ -51,7 +51,9 @@ const statusOf = (count,par,reorder) => {
 };
 const SC={critical:"#ef4444",low:"#f59e0b",good:"#22c55e",neutral:"#d1d5db"};
 
-function exportInventory(items,counts){
+function exportAll(items, counts, locations, categories, units, vendors){
+  const wb = XLSX.utils.book_new();
+  // Sheet 1: Inventory
   const rows=[...items].sort((a,b)=>a.storeOrder-b.storeOrder).map(item=>({
     "In-House Location #":item.storeOrder,
     "Store Location #":item.storeLocationNum,
@@ -70,29 +72,26 @@ function exportInventory(items,counts){
     "Vendor":item.vendor,
     "Notes":item.notes,
   }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws["!cols"]=[10,12,32,20,14,8,10,10,10,10,14,12,8,6,16,20].map(w=>({wch:w}));
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Inventory");
-  XLSX.writeFile(wb,`inventory-${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-function exportLists(locations, categories, units, vendors){
-  const wb = XLSX.utils.book_new();
-  const locRows = locations.map(l=>({ "In-House Location": l.name, "In-House Location #": l.code }));
-  const locWs = XLSX.utils.json_to_sheet(locRows);
+  const invWs=XLSX.utils.json_to_sheet(rows);
+  invWs["!cols"]=[10,12,32,20,14,8,10,10,10,10,14,12,8,6,16,20].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, invWs, "Inventory");
+  // Sheet 2: In-House Location
+  const locWs = XLSX.utils.json_to_sheet(locations.map(l=>({ "In-House Location": l.name, "In-House Location #": l.code })));
   locWs["!cols"] = [{ wch: 28 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, locWs, "In-House Location");
+  // Sheet 3: Vendor
   const vendorWs = XLSX.utils.json_to_sheet(vendors.map(v=>({ Vendor: v })));
   vendorWs["!cols"] = [{ wch: 24 }];
   XLSX.utils.book_append_sheet(wb, vendorWs, "Vendor");
+  // Sheet 4: Category
   const catWs = XLSX.utils.json_to_sheet(categories.map(c=>({ Category: c })));
   catWs["!cols"] = [{ wch: 20 }];
   XLSX.utils.book_append_sheet(wb, catWs, "Category");
+  // Sheet 5: Units
   const unitWs = XLSX.utils.json_to_sheet(units.map(u=>({ Unit: u })));
   unitWs["!cols"] = [{ wch: 16 }];
   XLSX.utils.book_append_sheet(wb, unitWs, "Units");
-  XLSX.writeFile(wb, `lists-${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `inventory-${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 function generatePO(orderItems, date){
@@ -150,7 +149,6 @@ export default function App(){
   const [saved,setSaved]=useState(false);
   const [importStatus,setImportStatus]=useState(null);
   const importRef=useRef();
-  const importListsRef=useRef();
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
   // Helper: look up location code by name
@@ -219,64 +217,16 @@ export default function App(){
     persist([...items,item],counts);
   };
 
-  // ── IMPORT INVENTORY ──────────────────────────────────────────────────────
+  // ── IMPORT (single file — reads Inventory sheet + all list sheets) ────────
   function handleImport(e){
     const file=e.target.files?.[0]; if(!file)return; e.target.value="";
     const reader=new FileReader();
     reader.onload=(evt)=>{
       try{
         const wb=XLSX.read(evt.target.result,{type:"array"});
-        const ws=wb.Sheets[wb.SheetNames[0]];
-        const rows=XLSX.utils.sheet_to_json(ws);
-        const byName={};
-        items.forEach(i=>{byName[i.name.toLowerCase().trim()]=i.id;});
-        let updated=0,added=0;
-        const updatedItems=[...items];
-        rows.forEach(row=>{
-          const name=String(row["Item Name"]||"").trim(); if(!name)return;
-          const str=(k)=>{const v=row[k];return v!==undefined&&v!==""?String(v).trim():undefined;};
-          const num=(k)=>{const v=row[k],n=Number(v);return v!==undefined&&v!==""&&!isNaN(n)?n:undefined;};
-          const fields={
-            storeOrder:num("In-House Location #"),
-            storeLocationNum:num("Store Location #"),
-            par:num("To Have (Par)"), reorder:num("Reorder Point"),
-            countPerOrderUnit:num("Per Order Unit"),
-            location:str("In-House Location"), category:str("Category"),
-            unit:str("Unit"), orderUnit:str("Order Unit"),
-            active:str("Active"), vendor:str("Vendor"), notes:str("Notes"),
-          };
-          Object.keys(fields).forEach(k=>fields[k]===undefined&&delete fields[k]);
-          const id=byName[name.toLowerCase()];
-          if(id!==undefined){
-            const idx=updatedItems.findIndex(i=>i.id===id);
-            if(idx!==-1){updatedItems[idx]={...updatedItems[idx],...fields};updated++;}
-          } else {
-            updatedItems.push({id:uid(),name,storeOrder:fields.storeOrder??updatedItems.length+1,
-              storeLocationNum:fields.storeLocationNum??0,location:fields.location??locations[0]?.name??"Other",
-              category:fields.category??"",unit:fields.unit??units[0]??"each",par:fields.par??0,
-              reorder:fields.reorder??0,notes:fields.notes??"",frequency:1,
-              active:fields.active??"Yes",vendor:fields.vendor??vendors[0]??"Restaurant Depot",
-              orderUnit:fields.orderUnit,countPerOrderUnit:fields.countPerOrderUnit});
-            added++;
-          }
-        });
-        persist(updatedItems,counts);
-        setImportStatus({updated,added});
-        setTimeout(()=>setImportStatus(null),4000);
-      }catch(err){alert("Import failed: "+err.message);}
-    };
-    reader.readAsArrayBuffer(file);
-  }
 
-  // ── IMPORT LISTS ──────────────────────────────────────────────────────────
-  function handleImportLists(e){
-    const file=e.target.files?.[0]; if(!file)return; e.target.value="";
-    const reader=new FileReader();
-    reader.onload=(evt)=>{
-      try{
-        const wb=XLSX.read(evt.target.result,{type:"array"});
+        // ── List sheets (optional — only update if sheet is present) ──────
         let newLoc=locations, newCat=categories, newUnit=units, newVend=vendors;
-
         const locSheet=wb.Sheets["In-House Location"];
         if(locSheet){
           const rows=XLSX.utils.sheet_to_json(locSheet);
@@ -301,10 +251,47 @@ export default function App(){
           const parsed=rows.map(r=>String(r["Unit"]||r["Count Unit"]||"").trim()).filter(Boolean);
           if(parsed.length) newUnit=parsed;
         }
-        persistAll(items,counts,newLoc,newCat,newUnit,newVend);
-        setImportStatus({updated:0,added:0,lists:true});
+
+        // ── Inventory sheet ───────────────────────────────────────────────
+        const invSheet=wb.Sheets["Inventory"]||wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(invSheet);
+        const byName={};
+        items.forEach(i=>{byName[i.name.toLowerCase().trim()]=i.id;});
+        let updated=0, added=0;
+        const updatedItems=[...items];
+        rows.forEach(row=>{
+          const name=String(row["Item Name"]||"").trim(); if(!name)return;
+          const str=(k)=>{const v=row[k];return v!==undefined&&v!==""?String(v).trim():undefined;};
+          const num=(k)=>{const v=row[k],n=Number(v);return v!==undefined&&v!==""&&!isNaN(n)?n:undefined;};
+          const fields={
+            storeOrder:num("In-House Location #"),
+            storeLocationNum:num("Store Location #"),
+            par:num("To Have (Par)"), reorder:num("Reorder Point"),
+            countPerOrderUnit:num("Per Order Unit"),
+            location:str("In-House Location"), category:str("Category"),
+            unit:str("Unit"), orderUnit:str("Order Unit"),
+            active:str("Active"), vendor:str("Vendor"), notes:str("Notes"),
+          };
+          Object.keys(fields).forEach(k=>fields[k]===undefined&&delete fields[k]);
+          const id=byName[name.toLowerCase()];
+          if(id!==undefined){
+            const idx=updatedItems.findIndex(i=>i.id===id);
+            if(idx!==-1){updatedItems[idx]={...updatedItems[idx],...fields};updated++;}
+          } else {
+            updatedItems.push({id:uid(),name,storeOrder:fields.storeOrder??updatedItems.length+1,
+              storeLocationNum:fields.storeLocationNum??0,location:fields.location??newLoc[0]?.name??"Other",
+              category:fields.category??"",unit:fields.unit??newUnit[0]??"each",par:fields.par??0,
+              reorder:fields.reorder??0,notes:fields.notes??"",frequency:1,
+              active:fields.active??"Yes",vendor:fields.vendor??newVend[0]??"Restaurant Depot",
+              orderUnit:fields.orderUnit,countPerOrderUnit:fields.countPerOrderUnit});
+            added++;
+          }
+        });
+
+        persistAll(updatedItems,counts,newLoc,newCat,newUnit,newVend);
+        setImportStatus({updated,added});
         setTimeout(()=>setImportStatus(null),4000);
-      }catch(err){alert("Lists import failed: "+err.message);}
+      }catch(err){alert("Import failed: "+err.message);}
     };
     reader.readAsArrayBuffer(file);
   }
@@ -327,7 +314,6 @@ export default function App(){
   return(
     <div style={s.app}>
       <input ref={importRef} type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={handleImport}/>
-      <input ref={importListsRef} type="file" accept=".xlsx,.xls" style={{display:"none"}} onChange={handleImportLists}/>
 
       <div style={s.header}>
         <div style={s.hL}><span style={{fontSize:24}}>🍽️</span><div><div style={s.title}>Rio Bravito Inventory</div><div style={s.sub}>{date}</div></div></div>
@@ -405,16 +391,13 @@ export default function App(){
           <div style={s.mHeader}>
             <div><div style={{fontWeight:700,fontSize:15}}>Item Management</div><div style={{fontSize:11,color:"#6b7280"}}>{items.length} items · Tap any field to edit</div></div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
-              <button style={s.importBtn} onClick={()=>importRef.current.click()}>⬆️ Import Items</button>
-              <button style={s.xlsBtn}    onClick={()=>exportInventory(items,counts)}>⬇️ Export Items</button>
-              <button style={s.listsImportBtn} onClick={()=>importListsRef.current.click()}>⬆️ Import Lists</button>
-              <button style={s.listsBtn}  onClick={()=>exportLists(locations,categories,units,vendors)}>⬇️ Export Lists</button>
+              <button style={s.importBtn} onClick={()=>importRef.current.click()}>⬆️ Import</button>
+              <button style={s.xlsBtn}    onClick={()=>exportAll(items,counts,locations,categories,units,vendors)}>⬇️ Export</button>
               <button style={s.addBtn}    onClick={addItem}>+ Add</button>
             </div>
           </div>
           <div style={s.importHint}>
-            💡 <b>Items workflow:</b> Export Items → edit in Excel (match by Item Name) → Import Items.<br/>
-            📋 <b>Lists workflow:</b> Export Lists → add/edit locations (with codes), categories, units, vendors → Import Lists. Changing a location auto-fills its code.
+            💡 <b>Workflow:</b> Export → one file with all sheets → edit items, locations, categories, vendors, or units in Excel → Import back. Items matched by <b>Item Name</b>. Changing a location auto-fills its code.
           </div>
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
@@ -510,7 +493,7 @@ export default function App(){
               <div style={s.poBar}>
                 <span style={{fontWeight:700,color:"#16a34a",fontSize:14}}>✅ Purchase Order Ready</span>
                 <div style={{display:"flex",gap:7}}>
-                  <button style={s.xlsBtn} onClick={()=>exportInventory(items,counts)}>⬇️ Export .xlsx</button>
+                  <button style={s.xlsBtn} onClick={()=>exportAll(items,counts,locations,categories,units,vendors)}>⬇️ Export .xlsx</button>
                   <button style={s.addBtn} onClick={downloadPO}>⬇️ Download PO</button>
                 </div>
               </div>
@@ -583,8 +566,6 @@ const s={
   addBtn:{background:"#1a1a2e",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
   xlsBtn:{background:"#16a34a",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
   importBtn:{background:"#2563eb",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
-  listsBtn:{background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
-  listsImportBtn:{background:"#9333ea",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
   mCard:{background:"#fff",borderRadius:10,padding:"10px 12px",border:"1px solid #e5e7eb",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"},
   mTop:{display:"flex",alignItems:"center",gap:8,marginBottom:8},
   mFields:{display:"flex",flexWrap:"wrap",gap:10},
