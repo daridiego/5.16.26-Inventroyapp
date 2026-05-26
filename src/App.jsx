@@ -106,16 +106,24 @@ function openPO(orderItems, date){
   const vendors = Object.keys(vendorMap).sort();
   vendors.forEach(v => vendorMap[v].sort((a,b) => (a.storeOrder||0) - (b.storeOrder||0)));
 
-  // Build plain text version (for copy button)
-  let plain = `PURCHASE ORDER — ${date}\n\n`;
-  vendors.forEach(vendor => {
-    plain += `${"━".repeat(4)} ${vendor.toUpperCase()} ${"━".repeat(Math.max(0, 36 - vendor.length))}\n`;
+  // Unit abbreviations for compact text
+  const abbr = (unit) => {
+    const map = {
+      each:"ea", case:"cs", lbs:"lb", bags:"bg", boxes:"bx",
+      gallons:"gl", oz:"oz", flats:"fl", bunches:"bn",
+      cans:"cn", dozen:"dz", packs:"pk",
+    };
+    return map[unit?.toLowerCase()] || unit || "ea";
+  };
+
+  // Build plain text version — compact for texting
+  let plain = `Purchase Order\n${date}\n`;
+  vendors.forEach((vendor, vi) => {
+    plain += `\n${vendor.toUpperCase()}\n`;
     vendorMap[vendor].forEach(item => {
-      const qty = String(item.toOrder).padStart(3);
-      const unit = orderUnitLabel(item).padEnd(8);
-      plain += `  ${qty}  ${unit}  ${item.name}\n`;
+      const unit = abbr(orderUnitLabel(item));
+      plain += `${item.toOrder}${unit} ${item.name}\n`;
     });
-    plain += "\n";
   });
 
   // Build HTML rows grouped by vendor
