@@ -388,44 +388,42 @@ export default function App(){
           if(parsed.length) newUnit=parsed;
         }
 
-        // ── Inventory sheet ───────────────────────────────────────────────
+        // ── Inventory sheet — full replace ────────────────────────────────
         const invSheet=wb.Sheets["Inventory"]||wb.Sheets[wb.SheetNames[0]];
         const rows=XLSX.utils.sheet_to_json(invSheet);
-        const byName={};
-        items.forEach(i=>{byName[i.name.toLowerCase().trim()]=i.id;});
-        let updated=0, added=0;
-        const updatedItems=[...items];
+        // Keep existing IDs for items whose name matches (avoids losing count data)
+        const idByName={};
+        items.forEach(i=>{idByName[i.name.toLowerCase().trim()]=i.id;});
+        const newItems=[];
         rows.forEach(row=>{
           const name=String(row["Item Name"]||"").trim(); if(!name)return;
           const str=(k)=>{const v=row[k];return v!==undefined&&v!==""?String(v).trim():undefined;};
           const num=(k)=>{const v=row[k],n=Number(v);return v!==undefined&&v!==""&&!isNaN(n)?n:undefined;};
-          const fields={
-            storeOrder:num("In-House Location #"),
-            storeLocationNum:num("Store Location #"),
-            par:num("To Have (Par)"), reorder:num("Reorder Point"),
+          newItems.push({
+            id:idByName[name.toLowerCase()]??uid(),
+            name,
+            storeOrder:      num("In-House Location #")??newItems.length+1,
+            storeLocationNum:num("Store Location #")??0,
+            par:             num("To Have (Par)")??0,
+            reorder:         num("Reorder Point")??0,
             countPerOrderUnit:num("Per Order Unit"),
-            location:str("In-House Location"), category:str("Category"),
-            unit:str("Unit"), orderUnit:str("Order Unit"),
-            active:str("Active"), vendor:str("Vendor"), notes:str("Notes"),
-          };
-          Object.keys(fields).forEach(k=>fields[k]===undefined&&delete fields[k]);
-          const id=byName[name.toLowerCase()];
-          if(id!==undefined){
-            const idx=updatedItems.findIndex(i=>i.id===id);
-            if(idx!==-1){updatedItems[idx]={...updatedItems[idx],...fields};updated++;}
-          } else {
-            updatedItems.push({id:uid(),name,storeOrder:fields.storeOrder??updatedItems.length+1,
-              storeLocationNum:fields.storeLocationNum??0,location:fields.location??newLoc[0]?.name??"Other",
-              category:fields.category??"",unit:fields.unit??newUnit[0]??"each",par:fields.par??0,
-              reorder:fields.reorder??0,notes:fields.notes??"",frequency:1,
-              active:fields.active??"Yes",vendor:fields.vendor??newVend[0]??"Restaurant Depot",
-              orderUnit:fields.orderUnit,countPerOrderUnit:fields.countPerOrderUnit});
-            added++;
-          }
+            location:        str("In-House Location")??newLoc[0]?.name??"Other",
+            category:        str("Category")??"",
+            unit:            str("Unit")??newUnit[0]??"each",
+            orderUnit:       str("Order Unit"),
+            active:          str("Active")??"Yes",
+            vendor:          str("Vendor")??newVend[0]??"Restaurant Depot",
+            notes:           str("Notes")??"",
+            frequency:       num("Frequency")??1,
+          });
         });
 
-        persistAll(updatedItems,counts,newLoc,newCat,newUnit,newVend);
-        setImportStatus({updated,added});
+        // Clean up counts — remove any that belonged to deleted items
+        const newIds=new Set(newItems.map(i=>i.id));
+        const cleanedCounts=Object.fromEntries(Object.entries(counts).filter(([k])=>newIds.has(k)));
+
+        persistAll(newItems,cleanedCounts,newLoc,newCat,newUnit,newVend);
+        setImportStatus({total:newItems.length});
         setTimeout(()=>setImportStatus(null),4000);
       }catch(err){alert("Import failed: "+err.message);}
     };
@@ -459,7 +457,7 @@ export default function App(){
         <div style={s.hL}><span style={{fontSize:24}}>🍽️</span><div><div style={s.title}>Rio Bravito Inventory</div><div style={s.sub}>{date}</div></div></div>
         <div style={s.hR}>
           {saved&&<span style={s.savedBadge}>✓ Saved</span>}
-          {importStatus&&<span style={s.importBadge}>{importStatus.lists?"✓ Lists updated":`✓ ${importStatus.updated} updated${importStatus.added>0?`, ${importStatus.added} added`:""}`}</span>}
+          {importStatus&&<span style={s.importBadge}>{importStatus.total!==undefined?`✓ ${importStatus.total} items loaded`:"✓ Lists updated"}</span>}
           <div style={s.prog}><div style={s.progBar}><div style={{...s.progFill,width:`${items.length?(countedCount/items.length)*100:0}%`}}/></div><span style={s.progLbl}>{countedCount}/{items.length}</span></div>
         </div>
       </div>
@@ -537,7 +535,7 @@ export default function App(){
             </div>
           </div>
           <div style={s.importHint}>
-            💡 <b>Workflow:</b> Export → one file with all sheets → edit items, locations, categories, vendors, or units in Excel → Import back. Items matched by <b>Item Name</b>. Changing a location auto-fills its code.
+            💡 <b>Workflow:</b> Export → edit in Excel → Import. The Inventory sheet fully replaces the current list — items not in the file are removed. List sheets (locations, vendors, etc.) update only what's present.
           </div>
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
@@ -831,3 +829,4 @@ const s={
   listRow:{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:8,padding:"8px 10px",border:"1px solid #e5e7eb"},
   rowDel:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:6,padding:"3px 9px",fontSize:12,cursor:"pointer",flexShrink:0},
 };
+
