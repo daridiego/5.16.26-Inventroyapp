@@ -250,7 +250,7 @@ function InlineEdit({ value, onSave, type="text", width=160, label }) {
   if (editing) {
     return (
       <input ref={ref} value={v} type={type==="number"?"number":"text"}
-        style={{fontSize:13,padding:"4px 8px",border:"2px solid #3b82f6",borderRadius:6,
+        style={{fontSize:16,padding:"4px 8px",border:"2px solid #3b82f6",borderRadius:6,
           outline:"none",fontFamily:"inherit",width,boxSizing:"border-box"}}
         onChange={e=>setV(e.target.value)}
         onBlur={commit}
@@ -785,7 +785,7 @@ const s={
   content:{padding:"10px 10px 0"},
   toolbar:{display:"flex",flexDirection:"column",gap:7,marginBottom:10},
   fRow:{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"},
-  search:{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #d1d5db",fontSize:14,boxSizing:"border-box"},
+  search:{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #d1d5db",fontSize:16,boxSizing:"border-box"},
   sel:{padding:"7px 10px",borderRadius:8,border:"1px solid #d1d5db",fontSize:13,background:"#fff"},
   chk:{fontSize:13,display:"flex",alignItems:"center",gap:5,cursor:"pointer"},
   card:{background:"#fff",borderRadius:10,padding:"12px 14px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",border:"1px solid #e5e7eb"},
@@ -816,7 +816,7 @@ const s={
   fg:{display:"flex",flexDirection:"column",gap:2},
   fl:{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:0.4},
   ef:{fontSize:13,color:"#111827",cursor:"pointer",borderBottom:"1px dashed #d1d5db",padding:"2px 0",minWidth:30,display:"inline-block"},
-  inlineInput:{fontSize:13,padding:"2px 6px",border:"2px solid #3b82f6",borderRadius:6,outline:"none",fontFamily:"inherit"},
+  inlineInput:{fontSize:16,padding:"2px 6px",border:"2px solid #3b82f6",borderRadius:6,outline:"none",fontFamily:"inherit"},
   otag:{background:"#e5e7eb",color:"#374151",borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"},
   actBtn:{border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"},
   delBtn:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:7,padding:"4px 10px",fontSize:13,cursor:"pointer"},
@@ -829,4 +829,3 @@ const s={
   listRow:{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:8,padding:"8px 10px",border:"1px solid #e5e7eb"},
   rowDel:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:6,padding:"3px 9px",fontSize:12,cursor:"pointer",flexShrink:0},
 };
-
