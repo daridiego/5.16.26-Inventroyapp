@@ -301,18 +301,10 @@ export default function App(){
         if (d.lists.vendors?.length) setVendors(d.lists.vendors);
       }
       if (d?.items && d.items.length > 0) {
-        const savedById = Object.fromEntries(d.items.map(i => [i.id, i]));
-        const merged = SOURCE_ITEMS.map(item => {
-          const sv = savedById[item.id];
-          if (!sv) return item;
-          return { ...item, par:sv.par??item.par, reorder:sv.reorder??item.reorder, notes:sv.notes??item.notes,
-            location:sv.location??item.location, category:sv.category??item.category, unit:sv.unit??item.unit,
-            active:sv.active??item.active, vendor:sv.vendor??item.vendor, storeOrder:sv.storeOrder??item.storeOrder,
-            storeLocationNum:sv.storeLocationNum??item.storeLocationNum, frequency:sv.frequency??item.frequency,
-            countPerOrderUnit:sv.countPerOrderUnit??item.countPerOrderUnit, orderUnit:sv.orderUnit??item.orderUnit };
-        });
-        const sourceIds = new Set(SOURCE_ITEMS.map(i=>i.id));
-        setItems([...merged, ...d.items.filter(i=>!sourceIds.has(i.id))]);
+        setItems(d.items);
+      }
+      if (d?.counts) {
+        setCounts(d.counts);
       }
     });
   }, []);
