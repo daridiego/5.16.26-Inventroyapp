@@ -55,6 +55,7 @@ function exportAll(items, counts, locations, categories, units, vendors){
   const wb = XLSX.utils.book_new();
   // Sheet 1: Inventory
   const rows=[...items].sort((a,b)=>a.storeOrder-b.storeOrder).map(item=>({
+    "ID":item.id,
     "In-House Location #":item.storeOrder,
     "Store Location #":item.storeLocationNum,
     "Item Name":item.name,
@@ -73,7 +74,7 @@ function exportAll(items, counts, locations, categories, units, vendors){
     "Notes":item.notes,
   }));
   const invWs=XLSX.utils.json_to_sheet(rows);
-  invWs["!cols"]=[10,12,32,20,14,8,10,10,10,10,14,12,8,6,16,20].map(w=>({wch:w}));
+  invWs["!cols"]=[10,10,12,32,20,14,8,10,10,10,10,14,12,8,6,16,20].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, invWs, "Inventory");
   // Sheet 2: In-House Location
   const locWs = XLSX.utils.json_to_sheet(locations.map(l=>({ "In-House Location": l.name, "In-House Location #": l.code })));
@@ -391,7 +392,7 @@ export default function App(){
         // ── Inventory sheet — full replace ────────────────────────────────
         const invSheet=wb.Sheets["Inventory"]||wb.Sheets[wb.SheetNames[0]];
         const rows=XLSX.utils.sheet_to_json(invSheet);
-        // Keep existing IDs for items whose name matches (avoids losing count data)
+        // Build name→id fallback for items that have no ID column yet
         const idByName={};
         items.forEach(i=>{idByName[i.name.toLowerCase().trim()]=i.id;});
         const newItems=[];
@@ -399,8 +400,10 @@ export default function App(){
           const name=String(row["Item Name"]||"").trim(); if(!name)return;
           const str=(k)=>{const v=row[k];return v!==undefined&&v!==""?String(v).trim():undefined;};
           const num=(k)=>{const v=row[k],n=Number(v);return v!==undefined&&v!==""&&!isNaN(n)?n:undefined;};
+          // Prefer ID from spreadsheet, then existing name-matched ID, then generate new
+          const resolvedId = str("ID") || idByName[name.toLowerCase()] || uid();
           newItems.push({
-            id:idByName[name.toLowerCase()]??uid(),
+            id: resolvedId,
             name,
             storeOrder:      num("In-House Location #")??newItems.length+1,
             storeLocationNum:num("Store Location #")??0,
@@ -437,7 +440,7 @@ export default function App(){
     if(countedOnly&&(counts[item.id]===undefined||counts[item.id]===""))return false;
     return true;
   });
-  const filteredManage=[...filtered.filter(i=>i.active==="Yes"),...filtered.filter(i=>i.active!=="Yes")];
+  const filteredManage=[...filtered].sort((a,b)=>a.storeOrder-b.storeOrder);
   const countedCount=Object.values(counts).filter(v=>v!=="").length;
   const orderItems=sorted
     .filter(i=>i.active==="Yes" && counts[i.id]!=="" && counts[i.id]!==undefined)
