@@ -361,7 +361,7 @@ export default function App(){
   const orderItems=sorted
     .filter(i=>i.active==="Yes" && counts[i.id]!=="" && counts[i.id]!==undefined)
     .map(i=>({...i,count:counts[i.id],toOrder:needToOrder(i,counts[i.id])}))
-    .filter(i=>i.toOrder>0)
+    .filter(i=>parseFloat(i.count) <= parseFloat(i.reorder||0))
     .sort((a,b)=>a.storeOrder-b.storeOrder);
   const isEditing=(id,field)=>editingCell?.itemId===id&&editingCell?.field===field;
 
