@@ -337,11 +337,26 @@ export default function App(){
           });
         });
 
-        // Clean up counts — remove any that belonged to deleted items
+        // Build counts from "On Hand (Last Count)" column, then merge with existing
         const newIds=new Set(newItems.map(i=>i.id));
         const cleanedCounts=Object.fromEntries(Object.entries(counts).filter(([k])=>newIds.has(k)));
+        // Read On Hand values from the spreadsheet rows
+        const importedCounts={};
+        rows.forEach(row=>{
+          const name=String(row["Item Name"]||"").trim(); if(!name)return;
+          const onHand=row["On Hand (Last Count)"];
+          if(onHand===undefined||onHand==="") return;
+          const str=(k)=>{const v=row[k];return v!==undefined&&v!==""?String(v).trim():undefined;};
+          const resolvedId=str("ID")||idByName[name.toLowerCase()];
+          // Find the actual id from newItems in case it was just created
+          const newItem=newItems.find(i=>i.name.toLowerCase()===name.toLowerCase());
+          const id=newItem?.id||resolvedId;
+          if(id) importedCounts[id]=String(onHand);
+        });
+        // Imported counts take priority over existing session counts
+        const finalCounts={...cleanedCounts,...importedCounts};
 
-        persistAll(newItems,cleanedCounts,newLoc,newCat,newUnit,newVend);
+        persistAll(newItems,finalCounts,newLoc,newCat,newUnit,newVend);
         setImportStatus({total:newItems.length});
         setTimeout(()=>setImportStatus(null),4000);
       }catch(err){alert("Import failed: "+err.message);}
