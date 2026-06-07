@@ -95,19 +95,18 @@ function exportAll(items, counts, locations, categories, units, vendors){
   XLSX.writeFile(wb, `inventory-${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-function openPO(orderItems, date){
-  // Group by vendor, within each vendor sort by storeOrder (location code)
+function buildPOData(orderItems, date){
+  // Group by vendor, sort within each vendor by storeOrder
   const vendorMap = {};
   orderItems.forEach(item => {
     const v = item.vendor || "Other";
     if (!vendorMap[v]) vendorMap[v] = [];
     vendorMap[v].push(item);
   });
-  // Sort vendors alphabetically, items within each vendor by location code
   const vendors = Object.keys(vendorMap).sort();
   vendors.forEach(v => vendorMap[v].sort((a,b) => (a.storeOrder||0) - (b.storeOrder||0)));
 
-  // Unit abbreviations for compact text
+  // Unit abbreviations for compact plain text
   const abbr = (unit) => {
     const map = {
       each:"ea", case:"cs", lbs:"lb", bags:"bg", boxes:"bx",
@@ -117,93 +116,16 @@ function openPO(orderItems, date){
     return map[unit?.toLowerCase()] || unit || "ea";
   };
 
-  // Build plain text version — compact for texting
+  // Plain text for copy
   let plain = `Purchase Order\n${date}\n`;
-  vendors.forEach((vendor, vi) => {
+  vendors.forEach(vendor => {
     plain += `\n${vendor.toUpperCase()}\n`;
     vendorMap[vendor].forEach(item => {
-      const unit = abbr(orderUnitLabel(item));
-      plain += `${item.toOrder}${unit} ${item.name}\n`;
+      plain += `${item.toOrder}${abbr(orderUnitLabel(item))} ${item.name}\n`;
     });
   });
 
-  // Build HTML rows grouped by vendor
-  let htmlBody = "";
-  vendors.forEach(vendor => {
-    htmlBody += `<div class="vendor-header">${escapeHtml(vendor)}</div>`;
-    vendorMap[vendor].forEach(item => {
-      const isCritical = parseFloat(item.count||0) <= (item.reorder||0);
-      htmlBody += `<div class="item-row${isCritical?" critical":""}">
-        <span class="qty">${escapeHtml(item.toOrder)}</span>
-        <span class="unit">${escapeHtml(orderUnitLabel(item))}</span>
-        <span class="name">${escapeHtml(item.name)}</span>
-      </div>`;
-    });
-  });
-
-  const plainEscaped = plain.replace(/\\/g,"\\\\").replace(/`/g,"\\`");
-  const html = `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Purchase Order — ${escapeHtml(date)}</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:system-ui,sans-serif;background:#f8f8f6;color:#111827;padding:24px 20px 60px}
-    h1{font-size:20px;font-weight:700;margin-bottom:2px}
-    .date{font-size:13px;color:#6b7280;margin-bottom:20px}
-    .vendor-header{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-      color:#fff;background:#1a1a2e;padding:6px 14px;border-radius:8px 8px 0 0;margin-top:16px}
-    .item-row{display:flex;align-items:baseline;gap:0;padding:9px 14px;background:#fff;
-      border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb}
-    .item-row:last-of-type{border-radius:0 0 8px 8px;margin-bottom:4px}
-    .item-row.critical{background:#fff5f5}
-    .qty{font-size:18px;font-weight:700;color:#1a1a2e;min-width:40px;text-align:right;margin-right:10px}
-    .unit{font-size:13px;color:#6b7280;min-width:52px;margin-right:10px}
-    .name{font-size:15px;color:#111827}
-    .copy-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;
-      padding:12px 20px;display:flex;gap:10px;align-items:center}
-    .copy-btn{background:#1a1a2e;color:#fff;border:none;border-radius:10px;padding:10px 24px;
-      font-size:14px;font-weight:700;cursor:pointer;flex:1}
-    .copy-btn:active{opacity:0.8}
-    .copy-notice{font-size:13px;color:#16a34a;font-weight:600;opacity:0;transition:opacity 0.3s}
-    .copy-notice.show{opacity:1}
-    .total{font-size:12px;color:#6b7280;margin-top:16px;text-align:right}
-  </style>
-</head>
-<body>
-  <h1>Purchase Order</h1>
-  <div class="date">${escapeHtml(date)}</div>
-  ${htmlBody}
-  <div class="total">${orderItems.length} items across ${vendors.length} vendor${vendors.length!==1?"s":""}</div>
-  <div class="copy-bar">
-    <button class="copy-btn" onclick="copyText()">📋 Copy as Plain Text</button>
-    <span class="copy-notice" id="notice">Copied!</span>
-  </div>
-  <script>
-    const plainText = \`${plainEscaped}\`;
-    function copyText(){
-      navigator.clipboard.writeText(plainText).then(()=>{
-        const n=document.getElementById('notice');
-        n.classList.add('show');
-        setTimeout(()=>n.classList.remove('show'),2000);
-      }).catch(()=>{
-        const ta=document.createElement('textarea');
-        ta.value=plainText;ta.style.position='fixed';ta.style.opacity='0';
-        document.body.appendChild(ta);ta.select();document.execCommand('copy');
-        document.body.removeChild(ta);
-        const n=document.getElementById('notice');
-        n.classList.add('show');
-        setTimeout(()=>n.classList.remove('show'),2000);
-      });
-    }
-  </script>
-</body>
-</html>`;
-
-  const win = window.open("", "_blank");
-  win.document.write(html);
-  win.document.close();
+  return { vendors, vendorMap, plain, date, total: orderItems.length };
 }
 
 function escapeHtml(value){
@@ -285,6 +207,8 @@ export default function App(){
   const [editingCell,setEditingCell]=useState(null);
   const [saved,setSaved]=useState(false);
   const [importStatus,setImportStatus]=useState(null);
+  const [poData,setPoData]=useState(null);   // when set, PO overlay is shown
+  const [copyDone,setCopyDone]=useState(false);
   const importRef=useRef();
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
@@ -441,7 +365,8 @@ export default function App(){
     .sort((a,b)=>a.storeOrder-b.storeOrder);
   const isEditing=(id,field)=>editingCell?.itemId===id&&editingCell?.field===field;
 
-  function handlePO(){ openPO(orderItems, date); }
+  function handlePO(){ setPoData(buildPOData(orderItems, date)); }
+  function clearCounts(){ if(!confirm("Clear all counts? This cannot be undone.")) return; persist(items, {}); }
   
 
   return(
@@ -477,6 +402,7 @@ export default function App(){
                 <option value="Active">Active Only</option><option value="All">All</option><option value="Inactive">Inactive</option>
               </select>
               <label style={s.chk}><input type="checkbox" checked={countedOnly} onChange={e=>setCountedOnly(e.target.checked)}/> Counted</label>
+              <button style={s.clearBtn} onClick={clearCounts}>🗑 Clear Counts</button>
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -759,6 +685,53 @@ export default function App(){
           </ListSection>
         </div>
       )}
+
+      {/* ── PO OVERLAY ── */}
+      {poData&&(
+        <div style={s.poOverlay}>
+          <div style={s.poOverlayHeader}>
+            <button style={s.backBtn} onClick={()=>{setPoData(null);setCopyDone(false);}}>← Back</button>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontWeight:700,fontSize:16,color:"#fff"}}>Purchase Order</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.6)"}}>{poData.total} items · {poData.vendors.length} vendor{poData.vendors.length!==1?"s":""}</div>
+            </div>
+            <div style={{width:60}}/>
+          </div>
+          <div style={s.poOverlayBody}>
+            <div style={{fontSize:12,color:"#6b7280",marginBottom:16}}>{poData.date}</div>
+            {poData.vendors.map(vendor=>(
+              <div key={vendor} style={{marginBottom:16}}>
+                <div style={s.vendorHeader}>{vendor}</div>
+                {poData.vendorMap[vendor].map(item=>(
+                  <div key={item.id} style={{...s.poRow,background:parseFloat(item.count)<=(item.reorder||0)?"#fff5f5":"#fff"}}>
+                    <div>
+                      <span style={{fontWeight:700,fontSize:17,color:"#1a1a2e",marginRight:6}}>{item.toOrder}</span>
+                      <span style={{fontSize:13,color:"#6b7280",marginRight:10}}>{orderUnitLabel(item)}</span>
+                      <span style={{fontSize:14,color:"#111827"}}>{item.name}</span>
+                    </div>
+                    {parseFloat(item.count)<=(item.reorder||0)&&<span style={{fontSize:10,color:"#b91c1c",fontWeight:700,background:"#fee2e2",padding:"2px 6px",borderRadius:6,flexShrink:0}}>LOW</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div style={s.poOverlayFooter}>
+            <button style={{...s.fabBtn,background:copyDone?"#16a34a":"#1a1a2e"}} onClick={()=>{
+              navigator.clipboard.writeText(poData.plain).then(()=>{
+                setCopyDone(true); setTimeout(()=>setCopyDone(false),2500);
+              }).catch(()=>{
+                const ta=document.createElement("textarea");
+                ta.value=poData.plain; ta.style.position="fixed"; ta.style.opacity="0";
+                document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+                document.body.removeChild(ta);
+                setCopyDone(true); setTimeout(()=>setCopyDone(false),2500);
+              });
+            }}>
+              {copyDone?"✓ Copied!":"📋 Copy as Plain Text"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -823,4 +796,10 @@ const s={
     borderBottom:"1px solid #e5e7eb"},
   listRow:{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:8,padding:"8px 10px",border:"1px solid #e5e7eb"},
   rowDel:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:6,padding:"3px 9px",fontSize:12,cursor:"pointer",flexShrink:0},
+  clearBtn:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:8,padding:"7px 12px",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"},
+  poOverlay:{position:"fixed",inset:0,background:"#f7f5f0",zIndex:100,display:"flex",flexDirection:"column",maxWidth:720,margin:"0 auto"},
+  poOverlayHeader:{background:"#1a1a2e",padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0},
+  poOverlayBody:{flex:1,overflowY:"auto",padding:"14px 10px 20px"},
+  poOverlayFooter:{padding:"12px 14px 28px",background:"#f7f5f0",borderTop:"1px solid #e5e7eb",flexShrink:0},
+  backBtn:{background:"transparent",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,padding:"6px 14px",fontSize:14,fontWeight:600,cursor:"pointer",width:60},
 };
