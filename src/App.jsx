@@ -104,7 +104,7 @@ function buildPOData(orderItems, date){
     vendorMap[v].push(item);
   });
   const vendors = Object.keys(vendorMap).sort();
-  vendors.forEach(v => vendorMap[v].sort((a,b) => (a.storeOrder||0) - (b.storeOrder||0)));
+  vendors.forEach(v => vendorMap[v].sort((a,b) => (a.storeLocationNum||0) - (b.storeLocationNum||0)));
 
   // Unit abbreviations for compact plain text
   const abbr = (unit) => {
