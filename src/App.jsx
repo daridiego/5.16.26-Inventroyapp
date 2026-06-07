@@ -767,7 +767,7 @@ const s={
   cRow:{display:"flex",alignItems:"center",gap:8},
   nudge:{width:36,height:36,borderRadius:8,border:"1px solid #d1d5db",background:"#f9fafb",fontSize:18,cursor:"pointer",fontWeight:700,color:"#374151",display:"flex",alignItems:"center",justifyContent:"center"},
   cIn:{width:72,textAlign:"center",padding:"7px 4px",borderRadius:8,border:"2px solid #d1d5db",fontSize:22,fontWeight:700,color:"#111827",transition:"all 0.2s"},
-  uLbl:{fontSize:13,color:"#6b7280"},
+  uLbl:{fontSize:20,fontWeight:700,color:"#1a1a2e",minWidth:36},
   uncounted:{marginTop:7,background:"#fffbeb",border:"1px dashed #f59e0b",borderRadius:6,padding:"5px 10px",fontSize:12,color:"#92400e"},
   alertB:{marginTop:7,background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6,padding:"5px 10px",fontSize:12,color:"#b91c1c",fontWeight:500},
   empty:{textAlign:"center",padding:48,color:"#9ca3af",fontSize:14},
