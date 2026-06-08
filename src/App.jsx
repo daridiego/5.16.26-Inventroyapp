@@ -537,7 +537,7 @@ export default function App(){
                     {isEditing(item.id,"vendor")?<EditCell value={item.vendor} options={vendors} width={140} onSave={v=>updateField(item.id,"vendor",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"vendor"})}>{item.vendor||"—"}</span>}
                   </div>
                   {/* Numeric fields */}
-                  {[["par","Par","number",60],["reorder","Reorder At","number",60],["countPerOrderUnit","Per Order Unit","number",60]].map(([field,label,type,w])=>(
+                  {[["par","Par","number",60],["reorder","Reorder At","number",60],["countPerOrderUnit","Per Order Unit","number",60],["frequency","Frequency","number",60]].map(([field,label,type,w])=>(
                     <div key={field} style={s.fg}><div style={s.fl}>{label}</div>
                       {isEditing(item.id,field)?<EditCell value={item[field]??""} type={type} width={w} onSave={v=>updateField(item.id,field,v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field})}>{item[field]||"—"}</span>}
                     </div>
