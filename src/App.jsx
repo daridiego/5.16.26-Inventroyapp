@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
-import { loadInventoryData, saveInventoryData } from "./storage";
+import { loadInventoryData, saveInventoryData, loadSupplierNames } from "./storage";
 
 // ── DEFAULT REFERENCE LISTS (seeded from your spreadsheet) ───────────────────
 const DEFAULT_LOCATIONS = [
@@ -199,6 +199,9 @@ export default function App(){
   const [categories,setCategories]=useState(DEFAULT_CATEGORIES);
   const [units,setUnits]=useState(DEFAULT_UNITS);
   const [vendors,setVendors]=useState(DEFAULT_VENDORS);
+  const [supplierNames,setSupplierNames]=useState([]); // read-only, from the supplier-compare app
+  // Combined list for the item vendor picker: internal sourcing spots (this app) + real suppliers (compare app)
+  const vendorOptions = Array.from(new Set([...vendors, ...supplierNames])).sort();
   const [view,setView]=useState("count");
   const [search,setSearch]=useState("");
   const [filterLoc,setFilterLoc]=useState("All");
@@ -231,6 +234,7 @@ export default function App(){
         setCounts(d.counts);
       }
     });
+    loadSupplierNames().then(setSupplierNames);
   }, []);
 
   const persistAll = useCallback((ni,nc,nloc,ncat,nunit,nvend) => {
@@ -266,7 +270,7 @@ export default function App(){
     const defaultLoc = locations[0];
     const item={id:uid(),storeOrder:defaultLoc?.code??1,storeLocationNum:0,name:"New Item",
       location:defaultLoc?.name??"Other",category:"",unit:units[0]??"each",par:0,reorder:0,
-      notes:"",frequency:1,active:"Yes",vendor:vendors[0]??"Restaurant Depot"};
+      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot"};
     persist([...items,item],counts);
   };
 
@@ -534,7 +538,7 @@ export default function App(){
                   {/* Vendor */}
                   <div style={s.fg}>
                     <div style={s.fl}>Vendor</div>
-                    {isEditing(item.id,"vendor")?<EditCell value={item.vendor} options={vendors} width={140} onSave={v=>updateField(item.id,"vendor",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"vendor"})}>{item.vendor||"—"}</span>}
+                    {isEditing(item.id,"vendor")?<EditCell value={item.vendor} options={vendorOptions} width={140} onSave={v=>updateField(item.id,"vendor",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"vendor"})}>{item.vendor||"—"}</span>}
                   </div>
                   {/* Numeric fields */}
                   {[["par","Par","number",60],["reorder","Reorder At","number",60],["countPerOrderUnit","Per Order Unit","number",60],["frequency","Frequency","number",60]].map(([field,label,type,w])=>(
@@ -642,9 +646,10 @@ export default function App(){
             ))}
           </ListSection>
 
-          {/* ── VENDORS ── */}
+          {/* ── VENDORS (internal sourcing spots only — real suppliers live in the Supplier Compare app) ── */}
           <ListSection
             title="Vendors"
+            subtitle="For places like Scotts where you'd pull from existing stock. Suppliers with pricing (Restaurant Depot, Costco, etc.) are managed in the Supplier Compare app and show up in the vendor picker automatically — no need to add them here."
             onAdd={()=>persistAll(items,counts,locations,[...categories],units,[...vendors,"New Vendor"])}
           >
             {vendors.map((v,i)=>(

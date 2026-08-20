@@ -96,3 +96,39 @@ export async function saveInventoryData(data) {
     return localSaved;
   }
 }
+
+// ── Suppliers, read-only from the supplier-compare app ─────────────────
+// Suppliers are managed in that app only. We just mirror the names here
+// so this app's vendor picker stays in sync without duplicate/misspelled
+// entries. If the fetch fails for any reason, we simply fall back to an
+// empty list — this app keeps working exactly as it always has.
+
+const SUPPLIER_NAMES_CACHE_KEY = "resto-inv-v3-supplier-names-cache";
+
+const SUPPLIER_COMPARE_API_URL =
+  import.meta.env.VITE_SUPPLIER_COMPARE_API_URL ||
+  "https://riobravito-supplier-compare.vercel.app/api/suppliers";
+
+export async function loadSupplierNames() {
+  try {
+    const res = await fetch(SUPPLIER_COMPARE_API_URL, { method: "GET" });
+    if (!res.ok) throw new Error(`Supplier fetch failed (${res.status})`);
+    const payload = await res.json();
+    const names = Array.isArray(payload?.suppliers)
+      ? payload.suppliers.map((s) => s.name).filter(Boolean)
+      : [];
+    try {
+      localStorage.setItem(SUPPLIER_NAMES_CACHE_KEY, JSON.stringify(names));
+    } catch {
+      // ignore cache write failures
+    }
+    return names;
+  } catch {
+    try {
+      const raw = localStorage.getItem(SUPPLIER_NAMES_CACHE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+}
