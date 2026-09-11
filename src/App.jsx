@@ -57,10 +57,10 @@ function exportAll(items, counts, locations, categories, units, vendors){
   // Sheet 1: Inventory
   const rows=[...items].sort((a,b)=>a.storeOrder-b.storeOrder).map(item=>({
     "ID":item.id,
-    "In-House Location #":item.storeOrder,
+    "Bravito Location #":item.storeOrder,
     "Store Location #":item.storeLocationNum,
     "Item Name":item.name,
-    "In-House Location":item.location,
+    "Bravito Location":item.location,
     "Category":item.category,
     "Unit":item.unit,
     "Order Unit":item.orderUnit||"",
@@ -78,10 +78,10 @@ function exportAll(items, counts, locations, categories, units, vendors){
   const invWs=XLSX.utils.json_to_sheet(rows);
   invWs["!cols"]=[10,10,12,32,20,14,8,10,10,10,10,14,12,8,6,16,20,20].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, invWs, "Inventory");
-  // Sheet 2: In-House Location
-  const locWs = XLSX.utils.json_to_sheet(locations.map(l=>({ "In-House Location": l.name, "In-House Location #": l.code })));
+  // Sheet 2: Bravito Location
+  const locWs = XLSX.utils.json_to_sheet(locations.map(l=>({ "Bravito Location": l.name, "Bravito Location #": l.code })));
   locWs["!cols"] = [{ wch: 28 }, { wch: 16 }];
-  XLSX.utils.book_append_sheet(wb, locWs, "In-House Location");
+  XLSX.utils.book_append_sheet(wb, locWs, "Bravito Location");
   // Sheet 3: Vendor
   const vendorWs = XLSX.utils.json_to_sheet(vendors.map(v=>({ Vendor: v })));
   vendorWs["!cols"] = [{ wch: 24 }];
@@ -292,10 +292,10 @@ export default function App(){
 
         // ── List sheets (optional — only update if sheet is present) ──────
         let newLoc=locations, newCat=categories, newUnit=units, newVend=vendors;
-        const locSheet=wb.Sheets["In-House Location"];
+        const locSheet=wb.Sheets["Bravito Location"];
         if(locSheet){
           const rows=XLSX.utils.sheet_to_json(locSheet);
-          const parsed=rows.map(r=>({name:String(r["In-House Location"]||"").trim(),code:Number(r["In-House Location #"])||0})).filter(r=>r.name);
+          const parsed=rows.map(r=>({name:String(r["Bravito Location"]||"").trim(),code:Number(r["Bravito Location #"])||0})).filter(r=>r.name);
           if(parsed.length) newLoc=parsed;
         }
         const vendSheet=wb.Sheets["Vendor"];
@@ -333,12 +333,12 @@ export default function App(){
           newItems.push({
             id: resolvedId,
             name,
-            storeOrder:      num("In-House Location #")??newItems.length+1,
+            storeOrder:      num("Bravito Location #")??newItems.length+1,
             storeLocationNum:num("Store Location #")??0,
             par:             num("To Have (Par)")??0,
             reorder:         num("Reorder Point")??0,
             countPerOrderUnit:num("Per Order Unit"),
-            location:        str("In-House Location")??newLoc[0]?.name??"Other",
+            location:        str("Bravito Location")??newLoc[0]?.name??"Other",
             category:        str("Category")??"",
             unit:            str("Unit")??newUnit[0]??"each",
             orderUnit:       str("Order Unit"),
@@ -630,7 +630,7 @@ export default function App(){
 
           {/* ── IN-HOUSE LOCATIONS ── */}
           <ListSection
-            title="In-House Locations"
+            title="Bravito Locations"
             subtitle="Each location has a sort code — items sort by this in the Count tab"
             onAdd={()=>{
               const newLoc=[...locations,{name:"New Location",code:9}];
