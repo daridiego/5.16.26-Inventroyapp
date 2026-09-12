@@ -261,6 +261,96 @@ function InlineEdit({ value, onSave, type="text", width=160, label }) {
   );
 }
 
+// ── Shared editable field body for an item card — used by both the Manage list
+// and the New Item modal, so both stay in sync with one implementation.
+function ItemFieldsBody({item,isEd,startEdit,onField,onStoreField,onToggleStore,categories,units,vendorOptions,locationsByStore,locCode,locationNamesFor,hasStore}){
+  return (
+    <>
+      <div style={s.mFields}>
+        {/* Category */}
+        <div style={s.fg}>
+          <div style={s.fl}>Category</div>
+          {isEd("category")?<EditCell value={item.category} options={["", ...categories]} width={120} onSave={v=>onField("category",v)}/>:<span style={s.ef} onClick={()=>startEdit("category")}>{item.category||"—"}</span>}
+        </div>
+        {/* Unit */}
+        <div style={s.fg}>
+          <div style={s.fl}>Unit</div>
+          {isEd("unit")?<EditCell value={item.unit} options={units} width={90} onSave={v=>onField("unit",v)}/>:<span style={s.ef} onClick={()=>startEdit("unit")}>{item.unit||"—"}</span>}
+        </div>
+        {/* Order Unit */}
+        <div style={s.fg}>
+          <div style={s.fl}>Order Unit</div>
+          {isEd("orderUnit")?<EditCell value={item.orderUnit||"(same as unit)"} options={["(same as unit)",...units]} width={110} onSave={v=>onField("orderUnit",v==="(same as unit)"?"":v)}/>:<span style={s.ef} onClick={()=>startEdit("orderUnit")}>{item.orderUnit||"(same)"}</span>}
+        </div>
+        {/* Vendor */}
+        <div style={s.fg}>
+          <div style={s.fl}>Vendor</div>
+          {isEd("vendor")?<EditCell value={item.vendor} options={vendorOptions} width={140} onSave={v=>onField("vendor",v)}/>:<span style={s.ef} onClick={()=>startEdit("vendor")}>{item.vendor||"—"}</span>}
+        </div>
+        {/* Store Loc # — position within the vendor's store (e.g. Restaurant Depot), same for every restaurant */}
+        <div style={s.fg}>
+          <div style={s.fl}>Store Loc #</div>
+          {isEd("storeLocationNum")?<EditCell value={item.storeLocationNum} type="number" width={65} onSave={v=>onField("storeLocationNum",v)}/>:<span style={s.otag} onClick={()=>startEdit("storeLocationNum")}>{item.storeLocationNum}</span>}
+        </div>
+        {/* Per Order Unit / Frequency */}
+        {[["countPerOrderUnit","Per Order Unit","number",60],["frequency","Frequency","number",60]].map(([field,label,type,w])=>(
+          <div key={field} style={s.fg}><div style={s.fl}>{label}</div>
+            {isEd(field)?<EditCell value={item[field]??""} type={type} width={w} onSave={v=>onField(field,v)}/>:<span style={s.ef} onClick={()=>startEdit(field)}>{item[field]||"—"}</span>}
+          </div>
+        ))}
+        {/* Notes */}
+        <div style={s.fg}><div style={s.fl}>Notes</div>
+          {isEd("notes")?<EditCell value={item.notes??""} width={180} onSave={v=>onField("notes",v)}/>:<span style={s.ef} onClick={()=>startEdit("notes")}>{item.notes||"—"}</span>}
+        </div>
+      </div>
+      {/* Stores — which locations use this item, each with its own location/sort/par/reorder */}
+      <div style={s.storesBlock}>
+        <div style={s.fl}>Stores</div>
+        <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+          {STORE_LOCATIONS.map(store=>{
+            const on=hasStore(item,store);
+            return (
+              <button key={store} type="button"
+                style={{...s.storeChip,...(on?s.storeChipOn:{})}}
+                onClick={()=>onToggleStore(store)}>
+                {on?"☑":"☐"} {store}
+              </button>
+            );
+          })}
+        </div>
+        {STORE_LOCATIONS.filter(store=>hasStore(item,store)).map(store=>{
+          const info=item.storeInfo[store];
+          return (
+            <div key={store} style={s.storePanel}>
+              <div style={s.storePanelTitle}>{store}</div>
+              <div style={s.mFields}>
+                <div style={s.fg}>
+                  <div style={s.fl}>Location</div>
+                  {isEd("location",store)
+                    ? <EditCell value={info.location} options={[...locationNamesFor(store)].sort()} width={150}
+                        onSave={v=>onStoreField(store,"location",v)}/>
+                    : <span style={s.ef} onClick={()=>startEdit("location",store)}>
+                        {locCode(store,info.location)!==null&&<span style={{color:"#6b7280",fontSize:11}}>{locCode(store,info.location)} · </span>}{info.location||"—"}
+                      </span>}
+                </div>
+                <div style={s.fg}>
+                  <div style={s.fl}>Par</div>
+                  {isEd("par",store)?<EditCell value={info.par??""} type="number" width={60} onSave={v=>onStoreField(store,"par",v)}/>:<span style={s.ef} onClick={()=>startEdit("par",store)}>{info.par||"—"}</span>}
+                </div>
+                <div style={s.fg}>
+                  <div style={s.fl}>Reorder At</div>
+                  {isEd("reorder",store)?<EditCell value={info.reorder??""} type="number" width={60} onSave={v=>onStoreField(store,"reorder",v)}/>:<span style={s.ef} onClick={()=>startEdit("reorder",store)}>{info.reorder||"—"}</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {Object.keys(item.storeInfo||{}).length===0&&<div style={{fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>Not assigned to any store yet — check a store above.</div>}
+      </div>
+    </>
+  );
+}
+
 export default function App(){
   const [items,setItems]=useState(()=>SOURCE_ITEMS.map(migrateItem));
   const [counts,setCounts]=useState({});
@@ -283,6 +373,8 @@ export default function App(){
   const [importStatus,setImportStatus]=useState(null);
   const [poData,setPoData]=useState(null);   // when set, PO overlay is shown
   const [copyDone,setCopyDone]=useState(false);
+  const [newItemDraft,setNewItemDraft]=useState(null); // when set, New Item modal is shown
+  const [draftEditingField,setDraftEditingField]=useState(null); // {field, store}
   const importRef=useRef();
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
@@ -362,13 +454,58 @@ export default function App(){
     persist(items.map(i=>i.id===id?{...i,storeInfo:info}:i), counts);
   };
   const deleteItem=(id)=>{if(!confirm("Delete this item?"))return;persist(items.filter(i=>i.id!==id),counts);};
+  // "+ Add" opens a draft in the New Item modal instead of inserting straight into the
+  // (alphabetically-sorted) list — so you can fill everything in before it jumps into place.
   const addItem=()=>{
     const seedStore = selectedStore!=="All" ? selectedStore : STORE_LOCATIONS[0];
     const defaultLoc = (locationsByStore[seedStore]||[])[0];
     const item={id:uid(),name:"New Item",category:"",unit:units[0]??"each",storeLocationNum:0,
       notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",
       storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, par:0, reorder:0 } }};
-    persist([...items,item],counts);
+    setNewItemDraft(item);
+    setDraftEditingField(null);
+  };
+  const updateDraftField=(field,value)=>{
+    if(value===null){ setDraftEditingField(null); return; }
+    setNewItemDraft(d=>d?{...d,[field]:value}:d);
+    setDraftEditingField(null);
+  };
+  const updateDraftStoreField=(store,field,value)=>{
+    if(value===null){ setDraftEditingField(null); return; }
+    setNewItemDraft(d=>{
+      if(!d) return d;
+      const cur=d.storeInfo?.[store]||{};
+      let extra={};
+      if(field==="location"){
+        const code=locCode(store,value);
+        if(code!==null) extra={storeOrder:code};
+      }
+      return {...d,storeInfo:{...(d.storeInfo||{}),[store]:{...cur,[field]:value,...extra}}};
+    });
+    setDraftEditingField(null);
+  };
+  const toggleDraftStore=(store)=>{
+    setNewItemDraft(d=>{
+      if(!d) return d;
+      const info={...(d.storeInfo||{})};
+      if(info[store]){
+        delete info[store];
+      }else{
+        const locs=locationsByStore[store]||[];
+        info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,par:0,reorder:0};
+      }
+      return {...d,storeInfo:info};
+    });
+  };
+  const saveNewItem=()=>{
+    if(!newItemDraft) return;
+    persist([...items,newItemDraft],counts);
+    setNewItemDraft(null);
+    setDraftEditingField(null);
+  };
+  const cancelNewItem=()=>{
+    setNewItemDraft(null);
+    setDraftEditingField(null);
   };
 
   // ── IMPORT (single file — reads Inventory sheet + per-store location sheets) ────────
@@ -642,87 +779,21 @@ export default function App(){
                   <button style={{...s.actBtn,background:item.active==="Yes"?"#dcfce7":"#fee2e2",color:item.active==="Yes"?"#166534":"#991b1b"}} onClick={()=>updateField(item.id,"active",item.active==="Yes"?"No":"Yes")}>{item.active==="Yes"?"Active":"Inactive"}</button>
                   <button style={s.delBtn} onClick={()=>deleteItem(item.id)}>✕</button>
                 </div>
-                <div style={s.mFields}>
-                  {/* Category */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Category</div>
-                    {isEditing(item.id,"category")?<EditCell value={item.category} options={["", ...categories]} width={120} onSave={v=>updateField(item.id,"category",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"category"})}>{item.category||"—"}</span>}
-                  </div>
-                  {/* Unit */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Unit</div>
-                    {isEditing(item.id,"unit")?<EditCell value={item.unit} options={units} width={90} onSave={v=>updateField(item.id,"unit",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"unit"})}>{item.unit||"—"}</span>}
-                  </div>
-                  {/* Order Unit */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Order Unit</div>
-                    {isEditing(item.id,"orderUnit")?<EditCell value={item.orderUnit||"(same as unit)"} options={["(same as unit)",...units]} width={110} onSave={v=>updateField(item.id,"orderUnit",v==="(same as unit)"?"":v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"orderUnit"})}>{item.orderUnit||"(same)"}</span>}
-                  </div>
-                  {/* Vendor */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Vendor</div>
-                    {isEditing(item.id,"vendor")?<EditCell value={item.vendor} options={vendorOptions} width={140} onSave={v=>updateField(item.id,"vendor",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"vendor"})}>{item.vendor||"—"}</span>}
-                  </div>
-                  {/* Store Loc # — position within the vendor's store (e.g. Restaurant Depot), same for every restaurant */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Store Loc #</div>
-                    {isEditing(item.id,"storeLocationNum")?<EditCell value={item.storeLocationNum} type="number" width={65} onSave={v=>updateField(item.id,"storeLocationNum",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeLocationNum"})}>{item.storeLocationNum}</span>}
-                  </div>
-                  {/* Per Order Unit / Frequency */}
-                  {[["countPerOrderUnit","Per Order Unit","number",60],["frequency","Frequency","number",60]].map(([field,label,type,w])=>(
-                    <div key={field} style={s.fg}><div style={s.fl}>{label}</div>
-                      {isEditing(item.id,field)?<EditCell value={item[field]??""} type={type} width={w} onSave={v=>updateField(item.id,field,v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field})}>{item[field]||"—"}</span>}
-                    </div>
-                  ))}
-                  {/* Notes */}
-                  <div style={s.fg}><div style={s.fl}>Notes</div>
-                    {isEditing(item.id,"notes")?<EditCell value={item.notes??""} width={180} onSave={v=>updateField(item.id,"notes",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"notes"})}>{item.notes||"—"}</span>}
-                  </div>
-                </div>
-                {/* Stores — which locations use this item, each with its own location/sort/par/reorder */}
-                <div style={s.storesBlock}>
-                  <div style={s.fl}>Stores</div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                    {STORE_LOCATIONS.map(store=>{
-                      const on=hasStore(item,store);
-                      return (
-                        <button key={store} type="button"
-                          style={{...s.storeChip,...(on?s.storeChipOn:{})}}
-                          onClick={()=>toggleStore(item.id,store)}>
-                          {on?"☑":"☐"} {store}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {STORE_LOCATIONS.filter(store=>hasStore(item,store)).map(store=>{
-                    const info=item.storeInfo[store];
-                    return (
-                      <div key={store} style={s.storePanel}>
-                        <div style={s.storePanelTitle}>{store}</div>
-                        <div style={s.mFields}>
-                          <div style={s.fg}>
-                            <div style={s.fl}>Location</div>
-                            {isEditing(item.id,"location",store)
-                              ? <EditCell value={info.location} options={[...locationNamesFor(store)].sort()} width={150}
-                                  onSave={v=>updateStoreField(item.id,store,"location",v)}/>
-                              : <span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"location",store})}>
-                                  {locCode(store,info.location)!==null&&<span style={{color:"#6b7280",fontSize:11}}>{locCode(store,info.location)} · </span>}{info.location||"—"}
-                                </span>}
-                          </div>
-                          <div style={s.fg}>
-                            <div style={s.fl}>Par</div>
-                            {isEditing(item.id,"par",store)?<EditCell value={info.par??""} type="number" width={60} onSave={v=>updateStoreField(item.id,store,"par",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"par",store})}>{info.par||"—"}</span>}
-                          </div>
-                          <div style={s.fg}>
-                            <div style={s.fl}>Reorder At</div>
-                            {isEditing(item.id,"reorder",store)?<EditCell value={info.reorder??""} type="number" width={60} onSave={v=>updateStoreField(item.id,store,"reorder",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"reorder",store})}>{info.reorder||"—"}</span>}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {Object.keys(item.storeInfo||{}).length===0&&<div style={{fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>Not assigned to any store yet — check a store above.</div>}
-                </div>
+                <ItemFieldsBody
+                  item={item}
+                  isEd={(field,store=null)=>isEditing(item.id,field,store)}
+                  startEdit={(field,store=null)=>setEditingCell({itemId:item.id,field,store})}
+                  onField={(field,value)=>updateField(item.id,field,value)}
+                  onStoreField={(store,field,value)=>updateStoreField(item.id,store,field,value)}
+                  onToggleStore={(store)=>toggleStore(item.id,store)}
+                  categories={categories}
+                  units={units}
+                  vendorOptions={vendorOptions}
+                  locationsByStore={locationsByStore}
+                  locCode={locCode}
+                  locationNamesFor={locationNamesFor}
+                  hasStore={hasStore}
+                />
               </div>
             ))}
           </div>
@@ -890,6 +961,49 @@ export default function App(){
         </div>
       )}
 
+      {/* ── NEW ITEM MODAL ── */}
+      {newItemDraft&&(
+        <div style={s.poOverlay}>
+          <div style={s.poOverlayHeader}>
+            <button style={s.newItemCancelBtn} onClick={cancelNewItem}>Cancel</button>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontWeight:700,fontSize:16,color:"#fff"}}>New Item</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.6)"}}>Fill in the details, then save</div>
+            </div>
+            <button style={s.newItemSaveBtn} onClick={saveNewItem}>Save</button>
+          </div>
+          <div style={s.poOverlayBody}>
+            <div style={s.mCard}>
+              <div style={s.mTop}>
+                <div style={{...s.fg,flex:1}}>
+                  <div style={s.fl}>Item Name</div>
+                  {draftEditingField?.field==="name"?<EditCell value={newItemDraft.name} width={220} onSave={v=>updateDraftField("name",v)}/>:<span style={s.ef} onClick={()=>setDraftEditingField({field:"name"})}>{newItemDraft.name}</span>}
+                </div>
+                <button style={{...s.actBtn,background:newItemDraft.active==="Yes"?"#dcfce7":"#fee2e2",color:newItemDraft.active==="Yes"?"#166534":"#991b1b"}} onClick={()=>updateDraftField("active",newItemDraft.active==="Yes"?"No":"Yes")}>{newItemDraft.active==="Yes"?"Active":"Inactive"}</button>
+              </div>
+              <ItemFieldsBody
+                item={newItemDraft}
+                isEd={(field,store=null)=>draftEditingField?.field===field&&(draftEditingField?.store??null)===store}
+                startEdit={(field,store=null)=>setDraftEditingField({field,store})}
+                onField={updateDraftField}
+                onStoreField={updateDraftStoreField}
+                onToggleStore={toggleDraftStore}
+                categories={categories}
+                units={units}
+                vendorOptions={vendorOptions}
+                locationsByStore={locationsByStore}
+                locCode={locCode}
+                locationNamesFor={locationNamesFor}
+                hasStore={hasStore}
+              />
+            </div>
+          </div>
+          <div style={s.poOverlayFooter}>
+            <button style={s.fabBtn} onClick={saveNewItem}>✓ Add to Inventory List</button>
+          </div>
+        </div>
+      )}
+
       {/* ── PO OVERLAY ── */}
       {poData&&(
         <div style={s.poOverlay}>
@@ -1014,4 +1128,6 @@ const s={
   poOverlayBody:{flex:1,overflowY:"auto",padding:"14px 10px 20px"},
   poOverlayFooter:{padding:"12px 14px 28px",background:"#f7f5f0",borderTop:"1px solid #e5e7eb",flexShrink:0},
   backBtn:{background:"transparent",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,padding:"6px 14px",fontSize:14,fontWeight:600,cursor:"pointer",width:60},
+  newItemCancelBtn:{background:"transparent",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,padding:"6px 10px",fontSize:13,fontWeight:600,cursor:"pointer",width:70},
+  newItemSaveBtn:{background:"#16a34a",color:"#fff",border:"none",borderRadius:8,padding:"6px 10px",fontSize:13,fontWeight:700,cursor:"pointer",width:70},
 };
