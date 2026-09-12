@@ -43,7 +43,21 @@ const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
 // Note: storeLocationNum (where it sits in the VENDOR's store, e.g. Restaurant Depot, for
 // shopping-list order) is shared across restaurants — it stays on the item, not per-store.
 function migrateItem(item){
-  if (item.storeInfo) return item; // already migrated
+  if (item.storeInfo) {
+    // Already migrated once. An earlier version of this migration nested storeLocationNum
+    // inside each store's info instead of keeping it on the item — repair that here by
+    // recovering it from wherever it landed, then stripping it out of storeInfo.
+    if (item.storeLocationNum === undefined) {
+      const stash = Object.values(item.storeInfo).find(info => info && info.storeLocationNum !== undefined);
+      const cleanedInfo = {};
+      Object.entries(item.storeInfo).forEach(([store,info])=>{
+        const { storeLocationNum, ...restInfo } = info || {};
+        cleanedInfo[store] = restInfo;
+      });
+      return { ...item, storeLocationNum: stash?.storeLocationNum ?? 0, storeInfo: cleanedInfo };
+    }
+    return item;
+  }
   const { location, storeOrder, par, reorder, stores, ...rest } = item;
   const legacyStores = (stores && stores.length) ? stores : ["Rio Bravito"];
   const storeInfo = {};
