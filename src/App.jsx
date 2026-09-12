@@ -27,16 +27,57 @@ const DEFAULT_CATEGORIES = ["Beverages","Canned Goods","Cleaning","Dairy","Dry G
 const DEFAULT_UNITS       = ["each","case","lbs","bags","boxes","gallons","oz","flats","bunches","cans","dozen","packs"];
 const DEFAULT_VENDORS     = ["Restaurant Depot","Scotts"];
 const STORE_LOCATIONS     = ["Rio Bravito","Rio Bravo","Scott's"];
+const DEFAULT_STORE_LOCATION_LISTS = {
+  "Rio Bravito": DEFAULT_LOCATIONS,
+  "Rio Bravo":   [{ name: "General", code: 1 }],
+  "Scott's":     [{ name: "General", code: 1 }],
+};
 
 const SOURCE_ITEMS = [{"id":1,"storeOrder":1.0,"storeLocationNum":1030,"name":"Mexican Code 1/2L","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":2,"storeOrder":1.0,"storeLocationNum":800,"name":"Sauce To-Go Container 4 Oz","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":3,"storeOrder":1.0,"storeLocationNum":410,"name":"Queso Liquido","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":4,"storeOrder":1.0,"storeLocationNum":1010,"name":"Canned Coke","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":5,"storeOrder":1.0,"storeLocationNum":1000,"name":"Apple Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":6,"storeOrder":1.0,"storeLocationNum":1000,"name":"Mango Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":7,"storeOrder":1.0,"storeLocationNum":1000,"name":"Orange Juice","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":8,"storeOrder":1.0,"storeLocationNum":990,"name":"Bottled Water","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":9,"storeOrder":1.0,"storeLocationNum":990,"name":"Topo chico","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":10,"storeOrder":1.0,"storeLocationNum":400,"name":"Chipotel En Adobo","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":11,"storeOrder":1.0,"storeLocationNum":690,"name":"9\" Aluminum Round Containers","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":12,"storeOrder":1.0,"storeLocationNum":700,"name":"7\" Aluminum Round Containers","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":13,"storeOrder":1.0,"storeLocationNum":1150,"name":"Nopales","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":14,"storeOrder":1.0,"storeLocationNum":670,"name":"To Go Soup Containers 24Oz","location":"Corner Far","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":15,"storeOrder":1.2,"storeLocationNum":780,"name":"Straws wrapped 10\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":16,"storeOrder":1.2,"storeLocationNum":790,"name":"Lid for Sauce To-Go Container 4 Oz","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":17,"storeOrder":1.2,"storeLocationNum":880,"name":"Sternos","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":18,"storeOrder":1.2,"storeLocationNum":930,"name":"Serving Spoons Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":19,"storeOrder":1.2,"storeLocationNum":940,"name":"Seving Forks Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":20,"storeOrder":1.2,"storeLocationNum":950,"name":"Serving Tongs Disposable","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":21,"storeOrder":1.2,"storeLocationNum":1230,"name":"Wire Chaffing Dishes","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":22,"storeOrder":1.2,"storeLocationNum":1000,"name":"Diet Coke (can)","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":23,"storeOrder":1.2,"storeLocationNum":1020,"name":"Canned Sprite","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":24,"storeOrder":1.2,"storeLocationNum":680,"name":"Lids for 7\" Aluminum Round Containers","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":25,"storeOrder":1.2,"storeLocationNum":670,"name":"Lids for 9\" Aluminum Round Containers","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":26,"storeOrder":1.2,"storeLocationNum":850,"name":"Plastic Forks Heavy Weight","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":27,"storeOrder":1.2,"storeLocationNum":450,"name":"Togo contenedores para flan","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":28,"storeOrder":1.2,"storeLocationNum":380,"name":"Ketchup Bottles","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":29,"storeOrder":1.2,"storeLocationNum":740,"name":"Burrito Paper (food Wrap) shts 12\"x12\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":30,"storeOrder":1.2,"storeLocationNum":740,"name":"Burrito Paper (food Wrap) shts 9\"x12\"","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":31,"storeOrder":1.2,"storeLocationNum":660,"name":"To Go Soup Containers 16 Oz","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":32,"storeOrder":1.2,"storeLocationNum":650,"name":"To Go Cups 16 Oz for fountain TP16D","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":33,"storeOrder":1.2,"storeLocationNum":650,"name":"Cups para horchata grande","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":34,"storeOrder":1.2,"storeLocationNum":650,"name":"Lids para horchata grande","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":35,"storeOrder":1.2,"storeLocationNum":650,"name":"Lids For Fountain Cups","location":"Corner","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":36,"storeOrder":1.5,"storeLocationNum":240,"name":"Glitter Cleaner para plancha","location":"Corner Under Fountain","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":37,"storeOrder":1.5,"storeLocationNum":1060,"name":"Lime Juice","location":"Corner Under Fountain","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":38,"storeOrder":2.0,"storeLocationNum":810,"name":"Lid for Sauce To-Go Container .75 Oz","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":39,"storeOrder":2.0,"storeLocationNum":820,"name":"Sauce To-Go Container .75 Oz","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":40,"storeOrder":2.0,"storeLocationNum":1070,"name":"Napkins","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":41,"storeOrder":2.0,"storeLocationNum":450,"name":"Papel Para Impresora de enfrete","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":42,"storeOrder":2.0,"storeLocationNum":450,"name":"Papel para impresora de cocina","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":43,"storeOrder":2.0,"storeLocationNum":1160,"name":"Masking Tape","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":44,"storeOrder":2.0,"storeLocationNum":460,"name":"Ketchup Packets","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":45,"storeOrder":2.0,"storeLocationNum":490,"name":"Sugar (For Flan)","location":"Cabinets","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":46,"storeOrder":2.5,"storeLocationNum":960,"name":"4# Paper Bags","location":"Coke Shelve","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":47,"storeOrder":2.5,"storeLocationNum":970,"name":"6# Geocery Brown Paper Bags","location":"Coke Shelve","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":48,"storeOrder":2.6,"storeLocationNum":450,"name":"Cooking Oil","location":"Next to chip warmer","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":49,"storeOrder":2.6,"storeLocationNum":520,"name":"Salt","location":"Next to chip warmer","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":50,"storeOrder":2.7,"storeLocationNum":890,"name":"Aluminum Full Pans Deep","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":51,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Full Pans Medium","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":52,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Full Pans Shallow","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":53,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Half Pans Medium","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":54,"storeOrder":2.7,"storeLocationNum":900,"name":"Aluminum Half Pans Deep","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":55,"storeOrder":2.7,"storeLocationNum":910,"name":"Aluminum Full Pan Lids","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":56,"storeOrder":2.7,"storeLocationNum":920,"name":"Aluminum Half Pan Lids","location":"Top Shelves","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":57,"storeOrder":3.0,"storeLocationNum":980,"name":"20# Paper Bags Shorties","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":58,"storeOrder":3.0,"storeLocationNum":630,"name":"Bolsas Para Churros","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":59,"storeOrder":3.0,"storeLocationNum":450,"name":"Tinta para impresora de cocina","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":60,"storeOrder":3.0,"storeLocationNum":630,"name":"Cup carrier","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":61,"storeOrder":3.0,"storeLocationNum":450,"name":"Marg Mix","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":62,"storeOrder":3.0,"storeLocationNum":450,"name":"Tripple Sec","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":63,"storeOrder":3.0,"storeLocationNum":1170,"name":"Chamoy","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":64,"storeOrder":3.0,"storeLocationNum":720,"name":"Aluminium individual Wrap para burrito","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":65,"storeOrder":3.0,"storeLocationNum":730,"name":"Aluminum Large (18\"x500ft)","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":66,"storeOrder":3.0,"storeLocationNum":750,"name":"Plastic Wrap Large (18\"x2000ft)","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":67,"storeOrder":3.0,"storeLocationNum":760,"name":"Plastic Wrap Meduim (12in x 3000\")","location":"Mueble 2","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":68,"storeOrder":3.0,"storeLocationNum":450,"name":"Mango Flavor For Margs","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":69,"storeOrder":3.0,"storeLocationNum":450,"name":"Strawberry Flavor For Margs","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":70,"storeOrder":3.3,"storeLocationNum":2000,"name":"Sharpies","location":"Cashier area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":71,"storeOrder":3.4,"storeLocationNum":330,"name":"Tajin","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":72,"storeOrder":3.4,"storeLocationNum":860,"name":"Plastic Knives Heavy Weight","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":73,"storeOrder":3.4,"storeLocationNum":870,"name":"Plastic Spoons Heavy Weight","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":74,"storeOrder":3.4,"storeLocationNum":710,"name":"Tooth Picks","location":"Cajon","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":75,"storeOrder":3.5,"storeLocationNum":430,"name":"Crushed Tomatillo","location":"Can area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":76,"storeOrder":3.5,"storeLocationNum":410,"name":"Sliced Jalapeños","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":77,"storeOrder":3.5,"storeLocationNum":420,"name":"Sliced Olives","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":78,"storeOrder":3.5,"storeLocationNum":1140,"name":"Salsa Mexicana Embassa","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":79,"storeOrder":3.5,"storeLocationNum":1250,"name":"White towles","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":80,"storeOrder":3.5,"storeLocationNum":470,"name":"Condensed Milk (For Flan)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":81,"storeOrder":3.5,"storeLocationNum":480,"name":"Evaporated Milk (For Flan)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":82,"storeOrder":3.5,"storeLocationNum":420,"name":"Chicken Stock (Caldo De pollo)","location":"Can area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":83,"storeOrder":3.55,"storeLocationNum":450,"name":"Tequila","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":84,"storeOrder":3.55,"storeLocationNum":830,"name":"Latex Disposable Gloves-L","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":85,"storeOrder":3.55,"storeLocationNum":840,"name":"Latex Disposable Gloves-M","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":86,"storeOrder":3.55,"storeLocationNum":1240,"name":"To Go bags Big","location":"Bar","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":87,"storeOrder":3.7,"storeLocationNum":240,"name":"Sanitizing tablets","location":"Under Hand Sink","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":88,"storeOrder":3.7,"storeLocationNum":250,"name":"Glass Cleaner","location":"Under Hand Sink","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":89,"storeOrder":3.7,"storeLocationNum":260,"name":"Hand Soap","location":"Under Hand Sink","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":90,"storeOrder":4.0,"storeLocationNum":1130,"name":"Light Chilli Powder (New Mexico)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":91,"storeOrder":4.0,"storeLocationNum":440,"name":"Fryer Oil Filters","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":92,"storeOrder":4.0,"storeLocationNum":280,"name":"Bleach","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":93,"storeOrder":4.0,"storeLocationNum":290,"name":"Pinesol","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":94,"storeOrder":4.0,"storeLocationNum":300,"name":"Green Scotch Brite","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":95,"storeOrder":4.0,"storeLocationNum":310,"name":"Steel Wool (esponja de metal)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":96,"storeOrder":4.0,"storeLocationNum":320,"name":"Grill Brick","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":97,"storeOrder":4.0,"storeLocationNum":340,"name":"Tomato Bouillon With Chicken (Knorr)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":98,"storeOrder":4.0,"storeLocationNum":350,"name":"Salsa Inglesa","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":99,"storeOrder":4.0,"storeLocationNum":360,"name":"Apple Cider Vinegar","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":100,"storeOrder":4.0,"storeLocationNum":390,"name":"Vanilla (For Flan)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":101,"storeOrder":4.0,"storeLocationNum":530,"name":"Granulated Garlic","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":102,"storeOrder":4.0,"storeLocationNum":540,"name":"Groud Cumin","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":103,"storeOrder":4.0,"storeLocationNum":550,"name":"Ground Black Pepper","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":104,"storeOrder":4.0,"storeLocationNum":540,"name":"Marjoarn","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":105,"storeOrder":4.0,"storeLocationNum":540,"name":"Thyme","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":106,"storeOrder":4.0,"storeLocationNum":560,"name":"Beef Base","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":107,"storeOrder":4.0,"storeLocationNum":560,"name":"Ground Cinnamon","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":108,"storeOrder":4.0,"storeLocationNum":560,"name":"Red Chilli Flakes","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":109,"storeOrder":4.0,"storeLocationNum":580,"name":"Whole Mexican Oregano","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":110,"storeOrder":4.0,"storeLocationNum":590,"name":"Whole Pepper","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":111,"storeOrder":4.0,"storeLocationNum":600,"name":"Ground Cloves","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":112,"storeOrder":4.0,"storeLocationNum":610,"name":"Whole Cloves","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":113,"storeOrder":4.0,"storeLocationNum":770,"name":"Sandwich Bags for Portioning","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":114,"storeOrder":4.0,"storeLocationNum":1090,"name":"Taco Seasoning (McCormic)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":115,"storeOrder":4.0,"storeLocationNum":1180,"name":"Achiote","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":116,"storeOrder":4.0,"storeLocationNum":1190,"name":"Guajillo","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":117,"storeOrder":4.0,"storeLocationNum":1200,"name":"New Mexico","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":118,"storeOrder":4.0,"storeLocationNum":1210,"name":"Pasilla","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":119,"storeOrder":4.0,"storeLocationNum":1220,"name":"Chile de Arbol","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":120,"storeOrder":4.0,"storeLocationNum":1290,"name":"Mole Paste","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":121,"storeOrder":4.0,"storeLocationNum":450,"name":"Crisco (all vegy shortening)","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":122,"storeOrder":4.0,"storeLocationNum":1040,"name":"Horchata Mix","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":123,"storeOrder":4.0,"storeLocationNum":500,"name":"Harina de tamales","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":124,"storeOrder":4.0,"storeLocationNum":570,"name":"Ground Paprika","location":"Dish Washer Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":125,"storeOrder":5.0,"storeLocationNum":160,"name":"Chicken Strips","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":126,"storeOrder":5.0,"storeLocationNum":150,"name":"Fries","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":127,"storeOrder":5.0,"storeLocationNum":210,"name":"Churros","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":128,"storeOrder":5.0,"storeLocationNum":2000,"name":"Pulpa de Aguacate","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":129,"storeOrder":5.0,"storeLocationNum":2000,"name":"Carne para menudo","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":130,"storeOrder":5.0,"storeLocationNum":80,"name":"Chorizo","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":131,"storeOrder":5.0,"storeLocationNum":210,"name":"Bacon 14/16 (tiras)","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":132,"storeOrder":5.0,"storeLocationNum":230,"name":"Mahi Mahi Taco pieces","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":133,"storeOrder":5.0,"storeLocationNum":1110,"name":"Bread for Tortas","location":"Freezer","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":134,"storeOrder":6.0,"storeLocationNum":510,"name":"Hoja para tamal","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":135,"storeOrder":6.0,"storeLocationNum":30,"name":"Potatoes","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"No","vendor":"Restaurant Depot","unit":"each","category":""},{"id":136,"storeOrder":6.0,"storeLocationNum":40,"name":"Yellow Onions","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":137,"storeOrder":6.0,"storeLocationNum":460,"name":"Frijoles","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":138,"storeOrder":6.0,"storeLocationNum":460,"name":"Parbroiled Rice","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":139,"storeOrder":6.0,"storeLocationNum":20,"name":"Avocado","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":140,"storeOrder":6.0,"storeLocationNum":620,"name":"To Go Boxes #1","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":141,"storeOrder":6.0,"storeLocationNum":630,"name":"To Go Boxes #3","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":142,"storeOrder":6.0,"storeLocationNum":640,"name":"To Go Boxes #8","location":"Line Area","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":143,"storeOrder":7.0,"storeLocationNum":10,"name":"Roma Tomatoes","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":144,"storeOrder":7.0,"storeLocationNum":50,"name":"Pineapple","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":145,"storeOrder":7.0,"storeLocationNum":90,"name":"Cilantro","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":146,"storeOrder":7.0,"storeLocationNum":110,"name":"Green Onion","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":147,"storeOrder":7.0,"storeLocationNum":120,"name":"Red Bell Peppers","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":148,"storeOrder":7.0,"storeLocationNum":120,"name":"Green Bell Peppers","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":149,"storeOrder":7.0,"storeLocationNum":120,"name":"Zuchinni Green","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":150,"storeOrder":7.0,"storeLocationNum":120,"name":"Squash Yellow","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":151,"storeOrder":7.0,"storeLocationNum":220,"name":"Huevo Liquido","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":152,"storeOrder":7.0,"storeLocationNum":130,"name":"Serranos","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":153,"storeOrder":7.0,"storeLocationNum":140,"name":"Iceberg Lettuce","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":154,"storeOrder":7.0,"storeLocationNum":170,"name":"Fancy Shred Jack Cheese Jack Chedar","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":155,"storeOrder":7.0,"storeLocationNum":170,"name":"Mozarela cheese","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":156,"storeOrder":7.0,"storeLocationNum":190,"name":"Boneless Skinless Chicken Thighs","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":157,"storeOrder":7.0,"storeLocationNum":200,"name":"Sour Cream Mexican Style","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":158,"storeOrder":7.0,"storeLocationNum":220,"name":"Large Eggs","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":159,"storeOrder":7.0,"storeLocationNum":70,"name":"Pealed Garlic","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":160,"storeOrder":7.0,"storeLocationNum":100,"name":"Jalapeños Fresh","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":161,"storeOrder":7.0,"storeLocationNum":60,"name":"Limes","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":162,"storeOrder":7.0,"storeLocationNum":180,"name":"Grated Queso Cotija","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":163,"storeOrder":7.0,"storeLocationNum":1100,"name":"Leche Para En Caja de Carton","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":2,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":164,"storeOrder":7.0,"storeLocationNum":370,"name":"Mayonnaise","location":"Walk In","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":165,"storeOrder":8.0,"storeLocationNum":1260,"name":"Bags for Rice","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":166,"storeOrder":8.0,"storeLocationNum":1270,"name":"White Garbage Bags 13 Gallons","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":167,"storeOrder":8.0,"storeLocationNum":1280,"name":"Black Garbage bags","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":168,"storeOrder":8.0,"storeLocationNum":270,"name":"Dawn Soap","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":169,"storeOrder":8.0,"storeLocationNum":1050,"name":"Toilet Paper","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""},{"id":170,"storeOrder":8.0,"storeLocationNum":1080,"name":"Paper Towels (GR-340)","location":"Bathroom","par":0,"reorder":0,"notes":"","frequency":1,"active":"Yes","vendor":"Restaurant Depot","unit":"each","category":""}];
 
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
 
+// ── MIGRATION — upgrades legacy single-location data to the per-store shape ──
+// Old item shape: { location, storeOrder, storeLocationNum, par, reorder, stores? }
+// New item shape: { storeInfo: { [storeName]: { location, storeOrder, storeLocationNum, par, reorder } } }
+function migrateItem(item){
+  if (item.storeInfo) return item; // already migrated
+  const { location, storeOrder, storeLocationNum, par, reorder, stores, ...rest } = item;
+  const legacyStores = (stores && stores.length) ? stores : ["Rio Bravito"];
+  const storeInfo = {};
+  legacyStores.forEach(store=>{
+    const isOriginalStore = store==="Rio Bravito";
+    storeInfo[store] = {
+      location:         isOriginalStore ? (location ?? "") : "",
+      storeOrder:        isOriginalStore ? (storeOrder ?? 999) : 999,
+      storeLocationNum: isOriginalStore ? (storeLocationNum ?? 0) : 0,
+      par:              isOriginalStore ? (par ?? 0) : 0,
+      reorder:          isOriginalStore ? (reorder ?? 0) : 0,
+    };
+  });
+  return { ...rest, storeInfo };
+}
+function migrateCounts(counts, items){
+  const out = {};
+  Object.entries(counts||{}).forEach(([id,val])=>{
+    if (val && typeof val==="object"){ out[id]=val; return; } // already migrated
+    const item = items.find(i=>i.id===id);
+    const firstStore = item ? Object.keys(item.storeInfo||{})[0] : null;
+    out[id] = { [firstStore||"Rio Bravito"]: val };
+  });
+  return out;
+}
+function migrateLocations(lists){
+  if (lists?.locationsByStore) return lists.locationsByStore;
+  const legacy = lists?.locations?.length ? lists.locations : DEFAULT_LOCATIONS;
+  return { ...DEFAULT_STORE_LOCATION_LISTS, "Rio Bravito": legacy };
+}
+
 // ── UNIT HELPERS ──────────────────────────────────────────────────────────────
-const needToOrder = (item, count) => {
+const needToOrder = (par, reorder, count, item) => {
   const n = parseFloat(count);
   if (isNaN(n)||count===""||count===undefined) return 0;
-  const shortage = Math.max(0,(item.par||0)-n);
+  const shortage = Math.max(0,(par||0)-n);
   if (!shortage) return 0;
   if (item.countPerOrderUnit && item.orderUnit) return Math.ceil(shortage/item.countPerOrderUnit);
   return shortage;
@@ -52,45 +93,56 @@ const statusOf = (count,par,reorder) => {
 };
 const SC={critical:"#ef4444",low:"#f59e0b",good:"#22c55e",neutral:"#d1d5db"};
 
-function exportAll(items, counts, locations, categories, units, vendors){
+function exportAll(items, counts, locationsByStore, categories, units, vendors){
   const wb = XLSX.utils.book_new();
-  // Sheet 1: Inventory
-  const rows=[...items].sort((a,b)=>a.storeOrder-b.storeOrder).map(item=>({
-    "ID":item.id,
-    "Bravito Location #":item.storeOrder,
-    "Store Location #":item.storeLocationNum,
-    "Item Name":item.name,
-    "Bravito Location":item.location,
-    "Category":item.category,
-    "Unit":item.unit,
-    "Order Unit":item.orderUnit||"",
-    "Per Order Unit":item.countPerOrderUnit||"",
-    "To Have (Par)":item.par||"",
-    "Reorder Point":item.reorder||"",
-    "On Hand (Last Count)":counts[item.id]!==undefined?counts[item.id]:"",
-    "Need To Order":counts[item.id]!==undefined?(needToOrder(item,counts[item.id])||""):"",
-    "Frequency":item.frequency,
-    "Active":item.active,
-    "Vendor":item.vendor,
-    "Stores":(item.stores||[]).join(", "),
-    "Notes":item.notes,
-  }));
+  // Sheet 1: Inventory — shared columns, then a block of columns per store
+  const rows=[...items].sort((a,b)=>a.name.localeCompare(b.name)).map(item=>{
+    const row={
+      "ID":item.id,
+      "Item Name":item.name,
+      "Category":item.category,
+      "Unit":item.unit,
+      "Order Unit":item.orderUnit||"",
+      "Per Order Unit":item.countPerOrderUnit||"",
+      "Frequency":item.frequency,
+      "Active":item.active,
+      "Vendor":item.vendor,
+      "Stores":Object.keys(item.storeInfo||{}).join(", "),
+    };
+    STORE_LOCATIONS.forEach(store=>{
+      const info=item.storeInfo?.[store];
+      const c=counts[item.id]?.[store];
+      row[`${store} Location #`]=info?info.storeOrder:"";
+      row[`${store} Location`]=info?info.location:"";
+      row[`${store} Store Loc #`]=info?info.storeLocationNum:"";
+      row[`${store} Par`]=info?(info.par||""):"";
+      row[`${store} Reorder Point`]=info?(info.reorder||""):"";
+      row[`${store} On Hand`]=info&&c!==undefined?c:"";
+      row[`${store} Need To Order`]=info&&c!==undefined?(needToOrder(info.par,info.reorder,c,item)||""):"";
+    });
+    row["Notes"]=item.notes;
+    return row;
+  });
   const invWs=XLSX.utils.json_to_sheet(rows);
-  invWs["!cols"]=[10,10,12,32,20,14,8,10,10,10,10,14,12,8,6,16,20,20].map(w=>({wch:w}));
+  const baseWidths=[8,32,14,8,10,10,8,6,16,20];
+  const storeWidths=[10,20,10,8,10,10,12];
+  invWs["!cols"]=[...baseWidths, ...STORE_LOCATIONS.flatMap(()=>storeWidths), 20].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, invWs, "Inventory");
-  // Sheet 2: Bravito Location
-  const locWs = XLSX.utils.json_to_sheet(locations.map(l=>({ "Bravito Location": l.name, "Bravito Location #": l.code })));
-  locWs["!cols"] = [{ wch: 28 }, { wch: 16 }];
-  XLSX.utils.book_append_sheet(wb, locWs, "Bravito Location");
-  // Sheet 3: Vendor
+  // Sheet per store: that store's location list (name + sort code)
+  STORE_LOCATIONS.forEach(store=>{
+    const locWs=XLSX.utils.json_to_sheet((locationsByStore[store]||[]).map(l=>({ "Location": l.name, "Location #": l.code })));
+    locWs["!cols"]=[{ wch: 28 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, locWs, `${store} Locations`.slice(0,31));
+  });
+  // Sheet: Vendor
   const vendorWs = XLSX.utils.json_to_sheet(vendors.map(v=>({ Vendor: v })));
   vendorWs["!cols"] = [{ wch: 24 }];
   XLSX.utils.book_append_sheet(wb, vendorWs, "Vendor");
-  // Sheet 4: Category
+  // Sheet: Category
   const catWs = XLSX.utils.json_to_sheet(categories.map(c=>({ Category: c })));
   catWs["!cols"] = [{ wch: 20 }];
   XLSX.utils.book_append_sheet(wb, catWs, "Category");
-  // Sheet 5: Units
+  // Sheet: Units
   const unitWs = XLSX.utils.json_to_sheet(units.map(u=>({ Unit: u })));
   unitWs["!cols"] = [{ wch: 16 }];
   XLSX.utils.book_append_sheet(wb, unitWs, "Units");
@@ -195,9 +247,9 @@ function InlineEdit({ value, onSave, type="text", width=160, label }) {
 }
 
 export default function App(){
-  const [items,setItems]=useState(SOURCE_ITEMS);
+  const [items,setItems]=useState(()=>SOURCE_ITEMS.map(migrateItem));
   const [counts,setCounts]=useState({});
-  const [locations,setLocations]=useState(DEFAULT_LOCATIONS);
+  const [locationsByStore,setLocationsByStore]=useState(()=>migrateLocations({}));
   const [categories,setCategories]=useState(DEFAULT_CATEGORIES);
   const [units,setUnits]=useState(DEFAULT_UNITS);
   const [vendors,setVendors]=useState(DEFAULT_VENDORS);
@@ -205,11 +257,13 @@ export default function App(){
   // Combined list for the item vendor picker: internal sourcing spots (this app) + real suppliers (compare app)
   const vendorOptions = Array.from(new Set([...vendors, ...supplierNames])).sort();
   const [view,setView]=useState("count");
+  // Which store is currently in focus. "All" only makes sense in Manage (no filter).
+  const [selectedStore,setSelectedStore]=useState(STORE_LOCATIONS[0]);
   const [search,setSearch]=useState("");
   const [filterLoc,setFilterLoc]=useState("All");
   const [filterActive,setFilterActive]=useState("Active");
   const [countedOnly,setCountedOnly]=useState(false);
-  const [editingCell,setEditingCell]=useState(null);
+  const [editingCell,setEditingCell]=useState(null); // {itemId, field, store}
   const [saved,setSaved]=useState(false);
   const [importStatus,setImportStatus]=useState(null);
   const [poData,setPoData]=useState(null);   // when set, PO overlay is shown
@@ -217,72 +271,92 @@ export default function App(){
   const importRef=useRef();
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
-  // Helper: look up location code by name
-  const locCode = (name) => locations.find(l=>l.name===name)?.code ?? null;
-  const locationNames = locations.map(l=>l.name);
+  // Helper: look up location code by store + name
+  const locCode = (store,name) => (locationsByStore[store]||[]).find(l=>l.name===name)?.code ?? null;
+  const locationNamesFor = (store) => (locationsByStore[store]||[]).map(l=>l.name);
+  const hasStore = (item,store) => !!(item.storeInfo && item.storeInfo[store]);
 
   useEffect(() => {
     loadInventoryData().then((d) => {
+      const locByStore = migrateLocations(d?.lists || {});
+      setLocationsByStore(locByStore);
       if (d?.lists) {
-        if (d.lists.locations?.length) setLocations(d.lists.locations);
         if (d.lists.categories?.length) setCategories(d.lists.categories);
         if (d.lists.units?.length) setUnits(d.lists.units);
         if (d.lists.vendors?.length) setVendors(d.lists.vendors);
       }
+      let curItems = items;
       if (d?.items && d.items.length > 0) {
-        setItems(d.items);
+        curItems = d.items.map(migrateItem);
+        setItems(curItems);
       }
       if (d?.counts) {
-        setCounts(d.counts);
+        setCounts(migrateCounts(d.counts, curItems));
       }
     });
     loadSupplierNames().then(setSupplierNames);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const persistAll = useCallback((ni,nc,nloc,ncat,nunit,nvend) => {
-    const li = nloc ?? locations;
+  const persistAll = useCallback((ni,nc,nlocByStore,ncat,nunit,nvend) => {
+    const lb = nlocByStore ?? locationsByStore;
     const ca = ncat ?? categories;
     const un = nunit ?? units;
     const ve = nvend ?? vendors;
     setItems(ni); setCounts(nc);
-    if(nloc) setLocations(nloc);
+    if(nlocByStore) setLocationsByStore(nlocByStore);
     if(ncat) setCategories(ncat);
     if(nunit) setUnits(nunit);
     if(nvend) setVendors(nvend);
-    saveInventoryData({ items:ni, counts:nc, lists:{ locations:li, categories:ca, units:un, vendors:ve } });
+    saveInventoryData({ items:ni, counts:nc, lists:{ locationsByStore:lb, categories:ca, units:un, vendors:ve } });
     setSaved(true); setTimeout(()=>setSaved(false),1500);
-  }, [locations,categories,units,vendors]);
+  }, [locationsByStore,categories,units,vendors]);
 
   const persist = useCallback((ni,nc) => persistAll(ni,nc,null,null,null,null), [persistAll]);
 
-  // When location changes on an item, auto-update storeOrder from location code
+  // Shared (not store-specific) fields: name, category, unit, orderUnit, countPerOrderUnit, vendor, notes, frequency, active
   const updateField = (id, field, value) => {
     if (value===null) { setEditingCell(null); return; }
-    let extra = {};
-    if (field==="location") {
-      const code = locCode(value);
-      if (code !== null) extra = { storeOrder: code };
-    }
-    persist(items.map(i=>i.id===id?{...i,[field]:value,...extra}:i), counts);
+    persist(items.map(i=>i.id===id?{...i,[field]:value}:i), counts);
     setEditingCell(null);
   };
-  const updateCount=(id,val)=>persist(items,{...counts,[id]:val});
+  // Per-store fields: location (auto-fills storeOrder from that store's location list), storeLocationNum, par, reorder
+  const updateStoreField = (id, store, field, value) => {
+    if (value===null) { setEditingCell(null); return; }
+    const item = items.find(i=>i.id===id); if(!item) return;
+    const cur = item.storeInfo?.[store] || {};
+    let extra = {};
+    if (field==="location") {
+      const code = locCode(store, value);
+      if (code !== null) extra = { storeOrder: code };
+    }
+    const nextInfo = { ...(item.storeInfo||{}), [store]: { ...cur, [field]: value, ...extra } };
+    persist(items.map(i=>i.id===id?{...i,storeInfo:nextInfo}:i), counts);
+    setEditingCell(null);
+  };
+  const updateCount=(id,store,val)=>persist(items,{...counts,[id]:{...(counts[id]||{}),[store]:val}});
   const toggleStore=(id,store)=>{
     const item=items.find(i=>i.id===id); if(!item) return;
-    const cur=item.stores||[];
-    const next=cur.includes(store)?cur.filter(x=>x!==store):[...cur,store];
-    persist(items.map(i=>i.id===id?{...i,stores:next}:i), counts);
+    const info={...(item.storeInfo||{})};
+    if(info[store]){
+      delete info[store];
+    }else{
+      const locs=locationsByStore[store]||[];
+      info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,storeLocationNum:0,par:0,reorder:0};
+    }
+    persist(items.map(i=>i.id===id?{...i,storeInfo:info}:i), counts);
   };
   const deleteItem=(id)=>{if(!confirm("Delete this item?"))return;persist(items.filter(i=>i.id!==id),counts);};
   const addItem=()=>{
-    const defaultLoc = locations[0];
-    const item={id:uid(),storeOrder:defaultLoc?.code??1,storeLocationNum:0,name:"New Item",
-      location:defaultLoc?.name??"Other",category:"",unit:units[0]??"each",par:0,reorder:0,
-      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",stores:[]};
+    const seedStore = selectedStore!=="All" ? selectedStore : STORE_LOCATIONS[0];
+    const defaultLoc = (locationsByStore[seedStore]||[])[0];
+    const item={id:uid(),name:"New Item",category:"",unit:units[0]??"each",
+      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",
+      storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, storeLocationNum:0, par:0, reorder:0 } }};
     persist([...items,item],counts);
   };
 
-  // ── IMPORT (single file — reads Inventory sheet + all list sheets) ────────
+  // ── IMPORT (single file — reads Inventory sheet + per-store location sheets) ────────
   function handleImport(e){
     const file=e.target.files?.[0]; if(!file)return; e.target.value="";
     const reader=new FileReader();
@@ -291,13 +365,15 @@ export default function App(){
         const wb=XLSX.read(evt.target.result,{type:"array"});
 
         // ── List sheets (optional — only update if sheet is present) ──────
-        let newLoc=locations, newCat=categories, newUnit=units, newVend=vendors;
-        const locSheet=wb.Sheets["Bravito Location"];
-        if(locSheet){
-          const rows=XLSX.utils.sheet_to_json(locSheet);
-          const parsed=rows.map(r=>({name:String(r["Bravito Location"]||"").trim(),code:Number(r["Bravito Location #"])||0})).filter(r=>r.name);
-          if(parsed.length) newLoc=parsed;
-        }
+        let newLocByStore={...locationsByStore}, newCat=categories, newUnit=units, newVend=vendors;
+        STORE_LOCATIONS.forEach(store=>{
+          const sheet=wb.Sheets[`${store} Locations`.slice(0,31)];
+          if(sheet){
+            const rows2=XLSX.utils.sheet_to_json(sheet);
+            const parsed=rows2.map(r=>({name:String(r["Location"]||"").trim(),code:Number(r["Location #"])||0})).filter(r=>r.name);
+            if(parsed.length) newLocByStore[store]=parsed;
+          }
+        });
         const vendSheet=wb.Sheets["Vendor"];
         if(vendSheet){
           const rows=XLSX.utils.sheet_to_json(vendSheet);
@@ -330,46 +406,56 @@ export default function App(){
           const num=(k)=>{const v=row[k],n=Number(v);return v!==undefined&&v!==""&&!isNaN(n)?n:undefined;};
           // Prefer ID from spreadsheet, then existing name-matched ID, then generate new
           const resolvedId = str("ID") || idByName[name.toLowerCase()] || uid();
+          const explicitStores = str("Stores")?str("Stores").split(",").map(x=>x.trim()).filter(Boolean):[];
+          const storeInfo={};
+          STORE_LOCATIONS.forEach(store=>{
+            const locName=str(`${store} Location`);
+            if(!explicitStores.includes(store) && !locName) return;
+            storeInfo[store]={
+              location:        locName ?? "",
+              storeOrder:      num(`${store} Location #`) ?? 999,
+              storeLocationNum:num(`${store} Store Loc #`) ?? 0,
+              par:             num(`${store} Par`) ?? 0,
+              reorder:         num(`${store} Reorder Point`) ?? 0,
+            };
+          });
           newItems.push({
             id: resolvedId,
             name,
-            storeOrder:      num("Bravito Location #")??newItems.length+1,
-            storeLocationNum:num("Store Location #")??0,
-            par:             num("To Have (Par)")??0,
-            reorder:         num("Reorder Point")??0,
-            countPerOrderUnit:num("Per Order Unit"),
-            location:        str("Bravito Location")??newLoc[0]?.name??"Other",
             category:        str("Category")??"",
             unit:            str("Unit")??newUnit[0]??"each",
             orderUnit:       str("Order Unit"),
+            countPerOrderUnit:num("Per Order Unit"),
             active:          str("Active")??"Yes",
             vendor:          str("Vendor")??newVend[0]??"Restaurant Depot",
             notes:           str("Notes")??"",
             frequency:       num("Frequency")??1,
-            stores:          str("Stores")?str("Stores").split(",").map(x=>x.trim()).filter(Boolean):[],
+            storeInfo,
           });
         });
 
-        // Build counts from "On Hand (Last Count)" column, then merge with existing
+        // Build counts from "{Store} On Hand" columns, then merge with existing
         const newIds=new Set(newItems.map(i=>i.id));
-        const cleanedCounts=Object.fromEntries(Object.entries(counts).filter(([k])=>newIds.has(k)));
-        // Read On Hand values from the spreadsheet rows
+        const cleanedCounts={};
+        Object.entries(counts).forEach(([id,val])=>{ if(newIds.has(id)) cleanedCounts[id]=val; });
         const importedCounts={};
         rows.forEach(row=>{
           const name=String(row["Item Name"]||"").trim(); if(!name)return;
-          const onHand=row["On Hand (Last Count)"];
-          if(onHand===undefined||onHand==="") return;
-          const str=(k)=>{const v=row[k];return v!==undefined&&v!==""?String(v).trim():undefined;};
-          const resolvedId=str("ID")||idByName[name.toLowerCase()];
-          // Find the actual id from newItems in case it was just created
           const newItem=newItems.find(i=>i.name.toLowerCase()===name.toLowerCase());
-          const id=newItem?.id||resolvedId;
-          if(id) importedCounts[id]=String(onHand);
+          if(!newItem) return;
+          STORE_LOCATIONS.forEach(store=>{
+            const onHand=row[`${store} On Hand`];
+            if(onHand===undefined||onHand==="") return;
+            importedCounts[newItem.id]={...(importedCounts[newItem.id]||{}),[store]:String(onHand)};
+          });
         });
-        // Imported counts take priority over existing session counts
-        const finalCounts={...cleanedCounts,...importedCounts};
+        // Imported counts take priority over existing session counts, merged per store
+        const finalCounts={...cleanedCounts};
+        Object.entries(importedCounts).forEach(([id,byStore])=>{
+          finalCounts[id]={...(finalCounts[id]||{}),...byStore};
+        });
 
-        persistAll(newItems,finalCounts,newLoc,newCat,newUnit,newVend);
+        persistAll(newItems,finalCounts,newLocByStore,newCat,newUnit,newVend);
         setImportStatus({total:newItems.length});
         setTimeout(()=>setImportStatus(null),4000);
       }catch(err){alert("Import failed: "+err.message);}
@@ -377,25 +463,48 @@ export default function App(){
     reader.readAsArrayBuffer(file);
   }
 
-  const sorted=[...items].sort((a,b)=>a.storeOrder-b.storeOrder);
+  // ── Store-scoped derived data (Count / Order tabs) ──────────────────────
+  const storeChosen = selectedStore!=="All";
+  const storeItems = storeChosen ? items.filter(i=>hasStore(i,selectedStore)) : items;
+  const sorted=[...storeItems].sort((a,b)=> storeChosen
+    ? (a.storeInfo[selectedStore].storeOrder-b.storeInfo[selectedStore].storeOrder)
+    : a.name.localeCompare(b.name));
   const filtered=sorted.filter(item=>{
     if(search&&!item.name.toLowerCase().includes(search.toLowerCase()))return false;
-    if(filterLoc!=="All"&&item.location!==filterLoc)return false;
-    if(countedOnly&&(counts[item.id]===undefined||counts[item.id]===""))return false;
+    if(storeChosen && filterLoc!=="All" && item.storeInfo[selectedStore].location!==filterLoc)return false;
+    if(countedOnly&&(counts[item.id]?.[selectedStore]===undefined||counts[item.id]?.[selectedStore]===""))return false;
     return true;
   });
-  const filteredManage=[...filtered].sort((a,b)=>a.storeOrder-b.storeOrder);
-  const countedCount=Object.values(counts).filter(v=>v!=="").length;
-  const orderItems=sorted
-    .filter(i=>i.active==="Yes" && counts[i.id]!=="" && counts[i.id]!==undefined)
-    .map(i=>({...i,count:counts[i.id],toOrder:needToOrder(i,counts[i.id])}))
+  // Manage tab has its own store filter (defaults to "All") — reuse selectedStore for consistency
+  const filteredManage=[...items].filter(item=>{
+    if(search&&!item.name.toLowerCase().includes(search.toLowerCase()))return false;
+    if(selectedStore!=="All"&&!hasStore(item,selectedStore))return false;
+    if(filterActive==="Active"&&item.active!=="Yes")return false;
+    if(filterActive==="Inactive"&&item.active==="Yes")return false;
+    return true;
+  }).sort((a,b)=>a.name.localeCompare(b.name));
+  const countedCount = storeChosen
+    ? storeItems.filter(i=>counts[i.id]?.[selectedStore]!==undefined&&counts[i.id]?.[selectedStore]!=="").length
+    : 0;
+  const orderItems = storeChosen ? sorted
+    .filter(i=>i.active==="Yes" && counts[i.id]?.[selectedStore]!=="" && counts[i.id]?.[selectedStore]!==undefined)
+    .map(i=>{
+      const info=i.storeInfo[selectedStore];
+      const count=counts[i.id][selectedStore];
+      return {...i,...info,count,toOrder:needToOrder(info.par,info.reorder,count,i)};
+    })
     .filter(i=>parseFloat(i.count) <= parseFloat(i.reorder||0))
-    .sort((a,b)=>a.storeOrder-b.storeOrder);
-  const isEditing=(id,field)=>editingCell?.itemId===id&&editingCell?.field===field;
+    .sort((a,b)=>a.storeOrder-b.storeOrder) : [];
+  const isEditing=(id,field,store=null)=>editingCell?.itemId===id&&editingCell?.field===field&&(editingCell?.store??null)===store;
 
   function handlePO(){ setPoData(buildPOData(orderItems, date)); }
-  function clearCounts(){ if(!confirm("Clear all counts? This cannot be undone.")) return; persist(items, {}); }
-  
+  function clearCounts(){
+    if(!storeChosen) return;
+    if(!confirm(`Clear all counts for ${selectedStore}? This cannot be undone.`)) return;
+    const nc={...counts};
+    Object.keys(nc).forEach(id=>{ if(nc[id]&&selectedStore in nc[id]){ nc[id]={...nc[id]}; delete nc[id][selectedStore]; } });
+    persist(items, nc);
+  }
 
   return(
     <div style={s.app}>
@@ -406,8 +515,16 @@ export default function App(){
         <div style={s.hR}>
           {saved&&<span style={s.savedBadge}>✓ Saved</span>}
           {importStatus&&<span style={s.importBadge}>{importStatus.total!==undefined?`✓ ${importStatus.total} items loaded`:"✓ Lists updated"}</span>}
-          <div style={s.prog}><div style={s.progBar}><div style={{...s.progFill,width:`${items.length?(countedCount/items.length)*100:0}%`}}/></div><span style={s.progLbl}>{countedCount}/{items.length}</span></div>
+          {storeChosen
+            ? <div style={s.prog}><div style={s.progBar}><div style={{...s.progFill,width:`${storeItems.length?(countedCount/storeItems.length)*100:0}%`}}/></div><span style={s.progLbl}>{countedCount}/{storeItems.length}</span></div>
+            : <span style={s.progLbl}>{items.length} items</span>}
         </div>
+      </div>
+
+      <div style={s.storeRow}>
+        {["All",...STORE_LOCATIONS].map(store=>(
+          <button key={store} style={{...s.storePill,...(selectedStore===store?s.storePillOn:{})}} onClick={()=>{setSelectedStore(store);setFilterLoc("All");}}>{store}</button>
+        ))}
       </div>
 
       <div style={s.nav}>
@@ -419,15 +536,16 @@ export default function App(){
       {/* ── COUNT TAB ── */}
       {view==="count"&&(
         <div style={s.content}>
+          {!storeChosen?(
+            <div style={s.empty}>👆 Pick a store above to start counting.</div>
+          ):(
+          <>
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search items..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <div style={s.fRow}>
               <select style={s.sel} value={filterLoc} onChange={e=>setFilterLoc(e.target.value)}>
                 <option value="All">All Locations</option>
-                {[...locations].sort((a,b)=>a.code-b.code).map(l=><option key={l.name} value={l.name}>{l.code} · {l.name}</option>)}
-              </select>
-              <select style={s.sel} value={filterActive} onChange={e=>setFilterActive(e.target.value)}>
-                <option value="Active">Active Only</option><option value="All">All</option><option value="Inactive">Inactive</option>
+                {[...(locationsByStore[selectedStore]||[])].sort((a,b)=>a.code-b.code).map(l=><option key={l.name} value={l.name}>{l.code} · {l.name}</option>)}
               </select>
               <label style={s.chk}><input type="checkbox" checked={countedOnly} onChange={e=>setCountedOnly(e.target.checked)}/> Counted</label>
               <button style={s.clearBtn} onClick={clearCounts}>🗑 Clear Counts</button>
@@ -435,30 +553,31 @@ export default function App(){
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {filtered.map(item=>{
-              const val=counts[item.id]??"";
-              const st=statusOf(val,item.par,item.reorder);
+              const info=item.storeInfo[selectedStore];
+              const val=counts[item.id]?.[selectedStore]??"";
+              const st=statusOf(val,info.par,info.reorder);
               const cLabel=countUnitLabel(item), oLabel=orderUnitLabel(item);
-              const code=locCode(item.location);
+              const code=locCode(selectedStore,info.location);
               return(
                 <div key={item.id} style={{...s.card,borderLeft:`4px solid ${SC[st]}`,opacity:item.active==="No"?0.55:1}}>
                   <div style={s.iName}>{item.name}{item.active==="No"&&<span style={s.inactBadge}>INACTIVE</span>}</div>
                   <div style={s.metaRow}>
-                    <span style={s.locBadge}>📍 {code!==null&&<b>{code} · </b>}{item.location}</span>
+                    <span style={s.locBadge}>📍 {code!==null&&<b>{code} · </b>}{info.location||"—"}</span>
                     {item.category&&<span style={s.catBadge}>{item.category}</span>}
-                    <span style={s.mTxt}>Par: <b>{item.par||"—"} {cLabel}</b></span>
-                    <span style={s.mTxt}>Reorder at: <b>{item.reorder||"—"}</b></span>
+                    <span style={s.mTxt}>Par: <b>{info.par||"—"} {cLabel}</b></span>
+                    <span style={s.mTxt}>Reorder at: <b>{info.reorder||"—"}</b></span>
                     {item.countPerOrderUnit&&item.orderUnit&&<span style={s.mTxt}>Orders by: <b>{item.countPerOrderUnit} {cLabel} = 1 {oLabel}</b></span>}
                     {item.notes&&<span style={s.noteTxt}>📝 {item.notes}</span>}
                   </div>
                   <div style={s.qtyLbl}>📥 QTY ON HAND ({cLabel}):</div>
                   <div style={s.cRow}>
-                    <button style={s.nudge} onClick={()=>updateCount(item.id,Math.max(0,(parseFloat(val)||0)-1))}>−</button>
-                    <input style={{...s.cIn,background:st==="critical"?"#fff0f0":st==="low"?"#fffbf0":val!==""?"#f0fff4":"#fff",borderColor:val===""?"#f59e0b":SC[st]}} type="number" min="0" placeholder="—" value={val} onChange={e=>updateCount(item.id,e.target.value)}/>
-                    <button style={s.nudge} onClick={()=>updateCount(item.id,(parseFloat(val)||0)+1)}>+</button>
+                    <button style={s.nudge} onClick={()=>updateCount(item.id,selectedStore,Math.max(0,(parseFloat(val)||0)-1))}>−</button>
+                    <input style={{...s.cIn,background:st==="critical"?"#fff0f0":st==="low"?"#fffbf0":val!==""?"#f0fff4":"#fff",borderColor:val===""?"#f59e0b":SC[st]}} type="number" min="0" placeholder="—" value={val} onChange={e=>updateCount(item.id,selectedStore,e.target.value)}/>
+                    <button style={s.nudge} onClick={()=>updateCount(item.id,selectedStore,(parseFloat(val)||0)+1)}>+</button>
                     <span style={s.uLbl}>{cLabel}</span>
                   </div>
                   {val===""&&<div style={s.uncounted}>👆 Tap box above to enter how many you have</div>}
-                  {val!==""&&parseFloat(val)<=(item.reorder||0)&&<div style={s.alertB}>⚠️ Below reorder point — need to order {needToOrder(item,val)} {oLabel}</div>}
+                  {val!==""&&parseFloat(val)<=(info.reorder||0)&&<div style={s.alertB}>⚠️ Below reorder point — need to order {needToOrder(info.par,info.reorder,val,item)} {oLabel}</div>}
                 </div>
               );
             })}
@@ -469,6 +588,8 @@ export default function App(){
               {orderItems.length===0?"✅ All Stocked — Nothing to Order":`📄 Generate Purchase Order (${orderItems.length} items)`}
             </button>
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -476,36 +597,29 @@ export default function App(){
       {view==="manage"&&(
         <div style={s.content}>
           <div style={s.mHeader}>
-            <div><div style={{fontWeight:700,fontSize:15}}>Item Management</div><div style={{fontSize:11,color:"#6b7280"}}>{items.length} items · Tap any field to edit</div></div>
+            <div><div style={{fontWeight:700,fontSize:15}}>Item Management</div><div style={{fontSize:11,color:"#6b7280"}}>{filteredManage.length} of {items.length} items · Tap any field to edit</div></div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
               <button style={s.importBtn} onClick={()=>importRef.current.click()}>⬆️ Import</button>
-              <button style={s.xlsBtn}    onClick={()=>exportAll(items,counts,locations,categories,units,vendors)}>⬇️ Export</button>
+              <button style={s.xlsBtn}    onClick={()=>exportAll(items,counts,locationsByStore,categories,units,vendors)}>⬇️ Export</button>
               <button style={s.addBtn}    onClick={addItem}>+ Add</button>
             </div>
           </div>
           <div style={s.importHint}>
-            💡 <b>Workflow:</b> Export → edit in Excel → Import. The Inventory sheet fully replaces the current list — items not in the file are removed. List sheets (locations, vendors, etc.) update only what's present.
+            💡 <b>Workflow:</b> Export → edit in Excel → Import. The Inventory sheet fully replaces the current list — items not in the file are removed. List sheets (locations per store, vendors, etc.) update only what's present.
           </div>
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <div style={s.fRow}>
-              <select style={s.sel} value={filterLoc} onChange={e=>setFilterLoc(e.target.value)}>
-                <option value="All">All Locations</option>
-                {[...locations].sort((a,b)=>a.code-b.code).map(l=><option key={l.name} value={l.name}>{l.code} · {l.name}</option>)}
-              </select>
               <select style={s.sel} value={filterActive} onChange={e=>setFilterActive(e.target.value)}>
                 <option value="Active">Active</option><option value="All">All</option><option value="Inactive">Inactive</option>
               </select>
+              <span style={{fontSize:12,color:"#6b7280"}}>Store filter (above): <b>{selectedStore}</b></span>
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8,paddingBottom:20}}>
             {filteredManage.map(item=>(
               <div key={item.id} style={{...s.mCard,opacity:item.active==="No"?0.6:1}}>
                 <div style={s.mTop}>
-                  <div style={s.fg}>
-                    <div style={s.fl}>Loc #</div>
-                    <span style={{...s.otag,background:"#dbeafe",color:"#1e40af"}}>{item.storeOrder}</span>
-                  </div>
                   <div style={{...s.fg,flex:1}}>
                     <div style={s.fl}>Item Name</div>
                     {isEditing(item.id,"name")?<EditCell value={item.name} width={190} onSave={v=>updateField(item.id,"name",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"name"})}>{item.name}</span>}
@@ -514,21 +628,6 @@ export default function App(){
                   <button style={s.delBtn} onClick={()=>deleteItem(item.id)}>✕</button>
                 </div>
                 <div style={s.mFields}>
-                  {/* Location dropdown — auto-fills code */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Location</div>
-                    {isEditing(item.id,"location")
-                      ? <EditCell value={item.location} options={[...locationNames].sort()} width={160}
-                          onSave={v=>updateField(item.id,"location",v)}/>
-                      : <span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"location"})}>
-                          {locCode(item.location)!==null&&<span style={{color:"#6b7280",fontSize:11}}>{locCode(item.location)} · </span>}{item.location||"—"}
-                        </span>}
-                  </div>
-                  {/* Store Location # (manual override) */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Store Loc #</div>
-                    {isEditing(item.id,"storeLocationNum")?<EditCell value={item.storeLocationNum} type="number" width={65} onSave={v=>updateField(item.id,"storeLocationNum",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeLocationNum"})}>{item.storeLocationNum}</span>}
-                  </div>
                   {/* Category */}
                   <div style={s.fg}>
                     <div style={s.fl}>Category</div>
@@ -549,24 +648,8 @@ export default function App(){
                     <div style={s.fl}>Vendor</div>
                     {isEditing(item.id,"vendor")?<EditCell value={item.vendor} options={vendorOptions} width={140} onSave={v=>updateField(item.id,"vendor",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"vendor"})}>{item.vendor||"—"}</span>}
                   </div>
-                  {/* Stores — which locations use this item */}
-                  <div style={s.fg}>
-                    <div style={s.fl}>Stores</div>
-                    <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                      {STORE_LOCATIONS.map(store=>{
-                        const on=(item.stores||[]).includes(store);
-                        return (
-                          <button key={store} type="button"
-                            style={{...s.storeChip,...(on?s.storeChipOn:{})}}
-                            onClick={()=>toggleStore(item.id,store)}>
-                            {on?"☑":"☐"} {store}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  {/* Numeric fields */}
-                  {[["par","Par","number",60],["reorder","Reorder At","number",60],["countPerOrderUnit","Per Order Unit","number",60],["frequency","Frequency","number",60]].map(([field,label,type,w])=>(
+                  {/* Per Order Unit / Frequency */}
+                  {[["countPerOrderUnit","Per Order Unit","number",60],["frequency","Frequency","number",60]].map(([field,label,type,w])=>(
                     <div key={field} style={s.fg}><div style={s.fl}>{label}</div>
                       {isEditing(item.id,field)?<EditCell value={item[field]??""} type={type} width={w} onSave={v=>updateField(item.id,field,v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field})}>{item[field]||"—"}</span>}
                     </div>
@@ -575,6 +658,54 @@ export default function App(){
                   <div style={s.fg}><div style={s.fl}>Notes</div>
                     {isEditing(item.id,"notes")?<EditCell value={item.notes??""} width={180} onSave={v=>updateField(item.id,"notes",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"notes"})}>{item.notes||"—"}</span>}
                   </div>
+                </div>
+                {/* Stores — which locations use this item, each with its own location/sort/par/reorder */}
+                <div style={s.storesBlock}>
+                  <div style={s.fl}>Stores</div>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                    {STORE_LOCATIONS.map(store=>{
+                      const on=hasStore(item,store);
+                      return (
+                        <button key={store} type="button"
+                          style={{...s.storeChip,...(on?s.storeChipOn:{})}}
+                          onClick={()=>toggleStore(item.id,store)}>
+                          {on?"☑":"☐"} {store}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {STORE_LOCATIONS.filter(store=>hasStore(item,store)).map(store=>{
+                    const info=item.storeInfo[store];
+                    return (
+                      <div key={store} style={s.storePanel}>
+                        <div style={s.storePanelTitle}>{store}</div>
+                        <div style={s.mFields}>
+                          <div style={s.fg}>
+                            <div style={s.fl}>Location</div>
+                            {isEditing(item.id,"location",store)
+                              ? <EditCell value={info.location} options={[...locationNamesFor(store)].sort()} width={150}
+                                  onSave={v=>updateStoreField(item.id,store,"location",v)}/>
+                              : <span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"location",store})}>
+                                  {locCode(store,info.location)!==null&&<span style={{color:"#6b7280",fontSize:11}}>{locCode(store,info.location)} · </span>}{info.location||"—"}
+                                </span>}
+                          </div>
+                          <div style={s.fg}>
+                            <div style={s.fl}>Store Loc #</div>
+                            {isEditing(item.id,"storeLocationNum",store)?<EditCell value={info.storeLocationNum} type="number" width={65} onSave={v=>updateStoreField(item.id,store,"storeLocationNum",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeLocationNum",store})}>{info.storeLocationNum}</span>}
+                          </div>
+                          <div style={s.fg}>
+                            <div style={s.fl}>Par</div>
+                            {isEditing(item.id,"par",store)?<EditCell value={info.par??""} type="number" width={60} onSave={v=>updateStoreField(item.id,store,"par",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"par",store})}>{info.par||"—"}</span>}
+                          </div>
+                          <div style={s.fg}>
+                            <div style={s.fl}>Reorder At</div>
+                            {isEditing(item.id,"reorder",store)?<EditCell value={info.reorder??""} type="number" width={60} onSave={v=>updateStoreField(item.id,store,"reorder",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"reorder",store})}>{info.reorder||"—"}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {Object.keys(item.storeInfo||{}).length===0&&<div style={{fontSize:12,color:"#9ca3af",fontStyle:"italic"}}>Not assigned to any store yet — check a store above.</div>}
                 </div>
               </div>
             ))}
@@ -585,7 +716,9 @@ export default function App(){
       {/* ── ORDER TAB ── */}
       {view==="order"&&(
         <div style={s.content}>
-          {orderItems.length===0?(
+          {!storeChosen?(
+            <div style={s.empty}>👆 Pick a store above to see what needs ordering.</div>
+          ):orderItems.length===0?(
             <div style={s.oPrompt}>
               <div style={{fontSize:52,marginBottom:12}}>✅</div>
               <p style={{color:"#6b7280",fontSize:15,marginBottom:8}}>All counted items are at or above par.</p>
@@ -628,64 +761,74 @@ export default function App(){
             Tap any value to edit it inline. Changes save immediately and update all dropdowns.
           </div>
 
-          {/* ── IN-HOUSE LOCATIONS ── */}
-          <ListSection
-            title="Bravito Locations"
-            subtitle="Each location has a sort code — items sort by this in the Count tab"
-            onAdd={()=>{
-              const newLoc=[...locations,{name:"New Location",code:9}];
-              persistAll(items,counts,newLoc,categories,units,vendors);
-            }}
-          >
-            {[...locations].sort((a,b)=>a.code-b.code).map((loc,i)=>(
-              <div key={i} style={s.listRow}>
-                <div style={{display:"flex",alignItems:"center",gap:8,flex:1,flexWrap:"wrap"}}>
-                  <InlineEdit
-                    value={loc.code}
-                    type="number"
-                    width={55}
-                    label="Code"
-                    onSave={v=>{
-                      const nl=locations.map((l,j)=>j===locations.indexOf(loc)?{...l,code:Number(v)||0}:l);
-                      persistAll(items,counts,[...nl].sort((a,b)=>a.code-b.code),categories,units,vendors);
-                    }}
-                  />
-                  <InlineEdit
-                    value={loc.name}
-                    width={180}
-                    label="Name"
-                    onSave={v=>{
-                      const oldName=loc.name;
-                      const nl=locations.map((l,j)=>j===locations.indexOf(loc)?{...l,name:v}:l);
-                      // Update any items that used the old location name
-                      const ni=items.map(item=>item.location===oldName?{...item,location:v}:item);
-                      persistAll(ni,counts,nl,categories,units,vendors);
-                    }}
-                  />
+          {/* ── PER-STORE LOCATIONS ── */}
+          {STORE_LOCATIONS.map(store=>(
+            <ListSection
+              key={store}
+              title={`${store} Locations`}
+              subtitle="Each location has a sort code — items sort by this in the Count tab"
+              onAdd={()=>{
+                const list=locationsByStore[store]||[];
+                const newList=[...list,{name:"New Location",code:9}];
+                persistAll(items,counts,{...locationsByStore,[store]:newList},categories,units,vendors);
+              }}
+            >
+              {[...(locationsByStore[store]||[])].sort((a,b)=>a.code-b.code).map((loc,i)=>{
+                const list=locationsByStore[store]||[];
+                const idx=list.indexOf(loc);
+                return (
+                <div key={i} style={s.listRow}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flex:1,flexWrap:"wrap"}}>
+                    <InlineEdit
+                      value={loc.code}
+                      type="number"
+                      width={55}
+                      label="Code"
+                      onSave={v=>{
+                        const nl=list.map((l,j)=>j===idx?{...l,code:Number(v)||0}:l);
+                        persistAll(items,counts,{...locationsByStore,[store]:[...nl].sort((a,b)=>a.code-b.code)},categories,units,vendors);
+                      }}
+                    />
+                    <InlineEdit
+                      value={loc.name}
+                      width={180}
+                      label="Name"
+                      onSave={v=>{
+                        const oldName=loc.name;
+                        const nl=list.map((l,j)=>j===idx?{...l,name:v}:l);
+                        // Update any items that used the old location name at this store
+                        const ni=items.map(item=>{
+                          if(item.storeInfo?.[store]?.location!==oldName) return item;
+                          return {...item,storeInfo:{...item.storeInfo,[store]:{...item.storeInfo[store],location:v}}};
+                        });
+                        persistAll(ni,counts,{...locationsByStore,[store]:nl},categories,units,vendors);
+                      }}
+                    />
+                  </div>
+                  <button style={s.rowDel} onClick={()=>{
+                    if(!confirm(`Delete "${loc.name}"?`))return;
+                    persistAll(items,counts,{...locationsByStore,[store]:list.filter((_,j)=>j!==idx)},categories,units,vendors);
+                  }}>✕</button>
                 </div>
-                <button style={s.rowDel} onClick={()=>{
-                  if(!confirm(`Delete "${loc.name}"?`))return;
-                  persistAll(items,counts,locations.filter((_,j)=>j!==locations.indexOf(loc)),categories,units,vendors);
-                }}>✕</button>
-              </div>
-            ))}
-          </ListSection>
+              );})}
+            </ListSection>
+          ))}
 
           {/* ── VENDORS (internal sourcing spots only — real suppliers live in the Supplier Compare app) ── */}
           <ListSection
             title="Vendors"
             subtitle="For places like Scotts where you'd pull from existing stock. Suppliers with pricing (Restaurant Depot, Costco, etc.) are managed in the Supplier Compare app and show up in the vendor picker automatically — no need to add them here."
-            onAdd={()=>persistAll(items,counts,locations,[...categories],units,[...vendors,"New Vendor"])}
+            onAdd={()=>persistAll(items,counts,locationsByStore,[...categories],units,[...vendors,"New Vendor"])}
           >
             {vendors.map((v,i)=>(
               <div key={i} style={s.listRow}>
                 <InlineEdit value={v} width={200} onSave={nv=>{
                   const nw=vendors.map((x,j)=>j===i?nv:x);
-                  persistAll(items,counts,locations,categories,units,nw);
+                  persistAll(items,counts,locationsByStore,categories,units,nw);
                 }}/>
                 <button style={s.rowDel} onClick={()=>{
                   if(vendors.length<=1){alert("Must keep at least one vendor.");return;}
-                  persistAll(items,counts,locations,categories,units,vendors.filter((_,j)=>j!==i));
+                  persistAll(items,counts,locationsByStore,categories,units,vendors.filter((_,j)=>j!==i));
                 }}>✕</button>
               </div>
             ))}
@@ -694,17 +837,17 @@ export default function App(){
           {/* ── CATEGORIES ── */}
           <ListSection
             title="Categories"
-            onAdd={()=>persistAll(items,counts,locations,[...categories,"New Category"],units,vendors)}
+            onAdd={()=>persistAll(items,counts,locationsByStore,[...categories,"New Category"],units,vendors)}
           >
             {categories.map((c,i)=>(
               <div key={i} style={s.listRow}>
                 <InlineEdit value={c} width={200} onSave={nv=>{
                   const nc=categories.map((x,j)=>j===i?nv:x);
-                  persistAll(items,counts,locations,nc,units,vendors);
+                  persistAll(items,counts,locationsByStore,nc,units,vendors);
                 }}/>
                 <button style={s.rowDel} onClick={()=>{
                   if(categories.length<=1){alert("Must keep at least one category.");return;}
-                  persistAll(items,counts,locations,categories.filter((_,j)=>j!==i),units,vendors);
+                  persistAll(items,counts,locationsByStore,categories.filter((_,j)=>j!==i),units,vendors);
                 }}>✕</button>
               </div>
             ))}
@@ -713,17 +856,17 @@ export default function App(){
           {/* ── UNITS ── */}
           <ListSection
             title="Units"
-            onAdd={()=>persistAll(items,counts,locations,categories,[...units,"New Unit"],vendors)}
+            onAdd={()=>persistAll(items,counts,locationsByStore,categories,[...units,"New Unit"],vendors)}
           >
             {units.map((u,i)=>(
               <div key={i} style={s.listRow}>
                 <InlineEdit value={u} width={200} onSave={nv=>{
                   const nu=units.map((x,j)=>j===i?nv:x);
-                  persistAll(items,counts,locations,categories,nu,vendors);
+                  persistAll(items,counts,locationsByStore,categories,nu,vendors);
                 }}/>
                 <button style={s.rowDel} onClick={()=>{
                   if(units.length<=1){alert("Must keep at least one unit.");return;}
-                  persistAll(items,counts,locations,categories,units.filter((_,j)=>j!==i),vendors);
+                  persistAll(items,counts,locationsByStore,categories,units.filter((_,j)=>j!==i),vendors);
                 }}>✕</button>
               </div>
             ))}
@@ -737,7 +880,7 @@ export default function App(){
           <div style={s.poOverlayHeader}>
             <button style={s.backBtn} onClick={()=>{setPoData(null);setCopyDone(false);}}>← Back</button>
             <div style={{textAlign:"center"}}>
-              <div style={{fontWeight:700,fontSize:16,color:"#fff"}}>Purchase Order</div>
+              <div style={{fontWeight:700,fontSize:16,color:"#fff"}}>Purchase Order — {selectedStore}</div>
               <div style={{fontSize:11,color:"rgba(255,255,255,0.6)"}}>{poData.total} items · {poData.vendors.length} vendor{poData.vendors.length!==1?"s":""}</div>
             </div>
             <div style={{width:60}}/>
@@ -792,7 +935,10 @@ const s={
   progBar:{width:70,height:6,background:"rgba(255,255,255,0.2)",borderRadius:3,overflow:"hidden"},
   progFill:{height:"100%",background:"#22c55e",borderRadius:3,transition:"width 0.3s"},
   progLbl:{fontSize:12,opacity:0.75},
-  nav:{display:"flex",background:"#fff",borderBottom:"1px solid #e5e7eb",position:"sticky",top:53,zIndex:40},
+  storeRow:{display:"flex",gap:6,padding:"8px 10px",background:"#fff",borderBottom:"1px solid #e5e7eb",overflowX:"auto",position:"sticky",top:53,zIndex:41},
+  storePill:{flexShrink:0,padding:"6px 14px",borderRadius:20,border:"1px solid #d1d5db",background:"#f9fafb",color:"#374151",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"},
+  storePillOn:{background:"#1a1a2e",color:"#fff",borderColor:"#1a1a2e"},
+  nav:{display:"flex",background:"#fff",borderBottom:"1px solid #e5e7eb",position:"sticky",top:101,zIndex:40},
   navBtn:{flex:1,padding:"11px 4px",border:"none",background:"transparent",fontSize:13,fontWeight:500,cursor:"pointer",color:"#6b7280",borderBottom:"3px solid transparent"},
   navA:{color:"#1a1a2e",borderBottom:"3px solid #1a1a2e",fontWeight:700},
   content:{padding:"10px 10px 0"},
@@ -835,6 +981,9 @@ const s={
   delBtn:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:7,padding:"4px 10px",fontSize:13,cursor:"pointer"},
   storeChip:{background:"#f9fafb",color:"#6b7280",border:"1px solid #d1d5db",borderRadius:14,padding:"4px 9px",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"},
   storeChipOn:{background:"#1a1a2e",color:"#fff",borderColor:"#1a1a2e"},
+  storesBlock:{marginTop:10,paddingTop:10,borderTop:"1px dashed #e5e7eb"},
+  storePanel:{background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 10px",marginTop:6},
+  storePanelTitle:{fontSize:11,fontWeight:700,color:"#1a1a2e",marginBottom:6,textTransform:"uppercase",letterSpacing:0.3},
   oPrompt:{textAlign:"center",padding:"60px 20px"},
   vendorHeader:{background:"#1a1a2e",color:"#fff",fontWeight:700,fontSize:12,letterSpacing:"0.5px",
     textTransform:"uppercase",padding:"7px 14px",borderRadius:"8px 8px 0 0",marginTop:4},
