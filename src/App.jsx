@@ -39,23 +39,24 @@ const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
 
 // ── MIGRATION — upgrades legacy single-location data to the per-store shape ──
 // Old item shape: { location, storeOrder, storeLocationNum, par, reorder, stores? }
-// New item shape: { storeInfo: { [storeName]: { location, storeOrder, storeLocationNum, par, reorder } } }
+// New item shape: { storeLocationNum, storeInfo: { [storeName]: { location, storeOrder, par, reorder } } }
+// Note: storeLocationNum (where it sits in the VENDOR's store, e.g. Restaurant Depot, for
+// shopping-list order) is shared across restaurants — it stays on the item, not per-store.
 function migrateItem(item){
   if (item.storeInfo) return item; // already migrated
-  const { location, storeOrder, storeLocationNum, par, reorder, stores, ...rest } = item;
+  const { location, storeOrder, par, reorder, stores, ...rest } = item;
   const legacyStores = (stores && stores.length) ? stores : ["Rio Bravito"];
   const storeInfo = {};
   legacyStores.forEach(store=>{
     const isOriginalStore = store==="Rio Bravito";
     storeInfo[store] = {
-      location:         isOriginalStore ? (location ?? "") : "",
-      storeOrder:        isOriginalStore ? (storeOrder ?? 999) : 999,
-      storeLocationNum: isOriginalStore ? (storeLocationNum ?? 0) : 0,
-      par:              isOriginalStore ? (par ?? 0) : 0,
-      reorder:          isOriginalStore ? (reorder ?? 0) : 0,
+      location:  isOriginalStore ? (location ?? "") : "",
+      storeOrder:isOriginalStore ? (storeOrder ?? 999) : 999,
+      par:       isOriginalStore ? (par ?? 0) : 0,
+      reorder:   isOriginalStore ? (reorder ?? 0) : 0,
     };
   });
-  return { ...rest, storeInfo };
+  return { storeLocationNum: 0, ...rest, storeInfo };
 }
 function migrateCounts(counts, items){
   const out = {};
@@ -107,6 +108,7 @@ function exportAll(items, counts, locationsByStore, categories, units, vendors){
       "Frequency":item.frequency,
       "Active":item.active,
       "Vendor":item.vendor,
+      "Store Loc #":item.storeLocationNum,
       "Stores":Object.keys(item.storeInfo||{}).join(", "),
     };
     STORE_LOCATIONS.forEach(store=>{
@@ -114,7 +116,6 @@ function exportAll(items, counts, locationsByStore, categories, units, vendors){
       const c=counts[item.id]?.[store];
       row[`${store} Location #`]=info?info.storeOrder:"";
       row[`${store} Location`]=info?info.location:"";
-      row[`${store} Store Loc #`]=info?info.storeLocationNum:"";
       row[`${store} Par`]=info?(info.par||""):"";
       row[`${store} Reorder Point`]=info?(info.reorder||""):"";
       row[`${store} On Hand`]=info&&c!==undefined?c:"";
@@ -124,8 +125,8 @@ function exportAll(items, counts, locationsByStore, categories, units, vendors){
     return row;
   });
   const invWs=XLSX.utils.json_to_sheet(rows);
-  const baseWidths=[8,32,14,8,10,10,8,6,16,20];
-  const storeWidths=[10,20,10,8,10,10,12];
+  const baseWidths=[8,32,14,8,10,10,8,6,16,12,20];
+  const storeWidths=[10,20,8,10,10,12];
   invWs["!cols"]=[...baseWidths, ...STORE_LOCATIONS.flatMap(()=>storeWidths), 20].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, invWs, "Inventory");
   // Sheet per store: that store's location list (name + sort code)
@@ -320,7 +321,7 @@ export default function App(){
     persist(items.map(i=>i.id===id?{...i,[field]:value}:i), counts);
     setEditingCell(null);
   };
-  // Per-store fields: location (auto-fills storeOrder from that store's location list), storeLocationNum, par, reorder
+  // Per-store fields: location (auto-fills storeOrder from that store's location list), par, reorder
   const updateStoreField = (id, store, field, value) => {
     if (value===null) { setEditingCell(null); return; }
     const item = items.find(i=>i.id===id); if(!item) return;
@@ -342,7 +343,7 @@ export default function App(){
       delete info[store];
     }else{
       const locs=locationsByStore[store]||[];
-      info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,storeLocationNum:0,par:0,reorder:0};
+      info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,par:0,reorder:0};
     }
     persist(items.map(i=>i.id===id?{...i,storeInfo:info}:i), counts);
   };
@@ -350,9 +351,9 @@ export default function App(){
   const addItem=()=>{
     const seedStore = selectedStore!=="All" ? selectedStore : STORE_LOCATIONS[0];
     const defaultLoc = (locationsByStore[seedStore]||[])[0];
-    const item={id:uid(),name:"New Item",category:"",unit:units[0]??"each",
+    const item={id:uid(),name:"New Item",category:"",unit:units[0]??"each",storeLocationNum:0,
       notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",
-      storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, storeLocationNum:0, par:0, reorder:0 } }};
+      storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, par:0, reorder:0 } }};
     persist([...items,item],counts);
   };
 
@@ -412,11 +413,10 @@ export default function App(){
             const locName=str(`${store} Location`);
             if(!explicitStores.includes(store) && !locName) return;
             storeInfo[store]={
-              location:        locName ?? "",
-              storeOrder:      num(`${store} Location #`) ?? 999,
-              storeLocationNum:num(`${store} Store Loc #`) ?? 0,
-              par:             num(`${store} Par`) ?? 0,
-              reorder:         num(`${store} Reorder Point`) ?? 0,
+              location:  locName ?? "",
+              storeOrder:num(`${store} Location #`) ?? 999,
+              par:       num(`${store} Par`) ?? 0,
+              reorder:   num(`${store} Reorder Point`) ?? 0,
             };
           });
           newItems.push({
@@ -426,6 +426,7 @@ export default function App(){
             unit:            str("Unit")??newUnit[0]??"each",
             orderUnit:       str("Order Unit"),
             countPerOrderUnit:num("Per Order Unit"),
+            storeLocationNum:num("Store Loc #") ?? 0,
             active:          str("Active")??"Yes",
             vendor:          str("Vendor")??newVend[0]??"Restaurant Depot",
             notes:           str("Notes")??"",
@@ -648,6 +649,11 @@ export default function App(){
                     <div style={s.fl}>Vendor</div>
                     {isEditing(item.id,"vendor")?<EditCell value={item.vendor} options={vendorOptions} width={140} onSave={v=>updateField(item.id,"vendor",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"vendor"})}>{item.vendor||"—"}</span>}
                   </div>
+                  {/* Store Loc # — position within the vendor's store (e.g. Restaurant Depot), same for every restaurant */}
+                  <div style={s.fg}>
+                    <div style={s.fl}>Store Loc #</div>
+                    {isEditing(item.id,"storeLocationNum")?<EditCell value={item.storeLocationNum} type="number" width={65} onSave={v=>updateField(item.id,"storeLocationNum",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeLocationNum"})}>{item.storeLocationNum}</span>}
+                  </div>
                   {/* Per Order Unit / Frequency */}
                   {[["countPerOrderUnit","Per Order Unit","number",60],["frequency","Frequency","number",60]].map(([field,label,type,w])=>(
                     <div key={field} style={s.fg}><div style={s.fl}>{label}</div>
@@ -688,10 +694,6 @@ export default function App(){
                               : <span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"location",store})}>
                                   {locCode(store,info.location)!==null&&<span style={{color:"#6b7280",fontSize:11}}>{locCode(store,info.location)} · </span>}{info.location||"—"}
                                 </span>}
-                          </div>
-                          <div style={s.fg}>
-                            <div style={s.fl}>Store Loc #</div>
-                            {isEditing(item.id,"storeLocationNum",store)?<EditCell value={info.storeLocationNum} type="number" width={65} onSave={v=>updateStoreField(item.id,store,"storeLocationNum",v)}/>:<span style={s.otag} onClick={()=>setEditingCell({itemId:item.id,field:"storeLocationNum",store})}>{info.storeLocationNum}</span>}
                           </div>
                           <div style={s.fg}>
                             <div style={s.fl}>Par</div>
