@@ -375,6 +375,11 @@ export default function App(){
   const [copyDone,setCopyDone]=useState(false);
   const [newItemDraft,setNewItemDraft]=useState(null); // when set, New Item modal is shown
   const [draftEditingField,setDraftEditingField]=useState(null); // {field, store}
+  // dbVersion tracks the last server version we know about, so saves can detect when
+  // someone else has saved in between (see commitChange below). syncIssue surfaces
+  // that state in the header when it's not a plain "everything's fine".
+  const [dbVersion,setDbVersion]=useState(0);
+  const [syncIssue,setSyncIssue]=useState(null); // null | "offline" | "conflict"
   const importRef=useRef();
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
@@ -383,84 +388,196 @@ export default function App(){
   const locationNamesFor = (store) => (locationsByStore[store]||[]).map(l=>l.name);
   const hasStore = (item,store) => !!(item.storeInfo && item.storeInfo[store]);
 
+  // Turns a raw server payload (or nothing) into a full local state shape, falling
+  // back to whatever this browser already has for any piece the server doesn't have.
+  const buildState = useCallback((raw) => {
+    const rawLists = raw?.lists;
+    // Only re-run migration when we actually have a fresh wrapper shape from the
+    // server; otherwise reuse what's already in local state as-is (it's already
+    // migrated) — running it back through migrateLocations would misread it as
+    // legacy data and reset it to the defaults.
+    const locByStore = rawLists ? migrateLocations(rawLists) : locationsByStore;
+    const baseItems = (raw?.items && raw.items.length ? raw.items : items).map(migrateItem);
+    return {
+      items: baseItems,
+      counts: raw?.counts ? migrateCounts(raw.counts, baseItems) : counts,
+      lists: locByStore,
+      categories: rawLists?.categories?.length ? rawLists.categories : categories,
+      units: rawLists?.units?.length ? rawLists.units : units,
+      vendors: rawLists?.vendors?.length ? rawLists.vendors : vendors,
+    };
+  }, [items, counts, locationsByStore, categories, units, vendors]);
+
+  const applyState = (next) => {
+    setItems(next.items); setCounts(next.counts); setLocationsByStore(next.lists);
+    setCategories(next.categories); setUnits(next.units); setVendors(next.vendors);
+  };
+
+  // Pulls the latest shared data and adopts it locally, without saving anything.
+  // Called at natural "look before you act" moments (opening an item to edit,
+  // hitting + Add, switching tabs/stores, coming back to the app) so everyone is
+  // looking at current data rather than whatever was loaded when the tab was opened.
+  const refreshFromServer = useCallback(async () => {
+    try {
+      const remote = await loadInventoryData();
+      if (!remote) return null;
+      const next = buildState(remote);
+      applyState(next);
+      if (typeof remote.version === "number") setDbVersion(remote.version);
+      setSyncIssue(null);
+      return next;
+    } catch {
+      setSyncIssue("offline");
+      return null;
+    }
+  }, [buildState]);
+
   useEffect(() => {
-    loadInventoryData().then((d) => {
-      const locByStore = migrateLocations(d?.lists || {});
-      setLocationsByStore(locByStore);
-      if (d?.lists) {
-        if (d.lists.categories?.length) setCategories(d.lists.categories);
-        if (d.lists.units?.length) setUnits(d.lists.units);
-        if (d.lists.vendors?.length) setVendors(d.lists.vendors);
+    (async () => {
+      const remote = await refreshFromServer();
+      if (!remote) {
+        // No server reachable / nothing saved yet — fall back to whatever's in
+        // localStorage (loadInventoryData already tried that before giving up).
       }
-      let curItems = items;
-      if (d?.items && d.items.length > 0) {
-        curItems = d.items.map(migrateItem);
-        setItems(curItems);
-      }
-      if (d?.counts) {
-        setCounts(migrateCounts(d.counts, curItems));
-      }
-    });
+    })();
     loadSupplierNames().then(setSupplierNames);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const persistAll = useCallback((ni,nc,nlocByStore,ncat,nunit,nvend) => {
-    const lb = nlocByStore ?? locationsByStore;
-    const ca = ncat ?? categories;
-    const un = nunit ?? units;
-    const ve = nvend ?? vendors;
-    setItems(ni); setCounts(nc);
-    if(nlocByStore) setLocationsByStore(nlocByStore);
-    if(ncat) setCategories(ncat);
-    if(nunit) setUnits(nunit);
-    if(nvend) setVendors(nvend);
-    saveInventoryData({ items:ni, counts:nc, lists:{ locationsByStore:lb, categories:ca, units:un, vendors:ve } });
-    setSaved(true); setTimeout(()=>setSaved(false),1500);
-  }, [locationsByStore,categories,units,vendors]);
+  // Refresh whenever the app comes back into view — switching back from another
+  // app/tab, or waking the phone screen — another natural "look before you act" point.
+  useEffect(() => {
+    const onFocusLike = () => { if (document.visibilityState !== "hidden") refreshFromServer(); };
+    document.addEventListener("visibilitychange", onFocusLike);
+    window.addEventListener("focus", onFocusLike);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocusLike);
+      window.removeEventListener("focus", onFocusLike);
+    };
+  }, [refreshFromServer]);
 
-  const persist = useCallback((ni,nc) => persistAll(ni,nc,null,null,null,null), [persistAll]);
+  // Applies `apply(freshState) => nextState` on top of the latest server data — not
+  // the possibly-stale copy already in this browser — and saves the result. If
+  // someone else saved in between our read and our write, the server rejects it
+  // (409) and we retry on top of THEIR latest data, up to a few times. That way two
+  // people editing at the same time never silently lose each other's changes.
+  const commitChange = useCallback(async (apply) => {
+    let base = buildState(null);
+    let expectedVersion = dbVersion;
+    try {
+      const remote = await loadInventoryData();
+      if (remote) {
+        base = buildState(remote);
+        if (typeof remote.version === "number") expectedVersion = remote.version;
+      }
+    } catch { /* offline — proceed with what we already have locally */ }
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const next = apply(base);
+      const result = await saveInventoryData(
+        { items: next.items, counts: next.counts, lists: { locationsByStore: next.lists, categories: next.categories, units: next.units, vendors: next.vendors } },
+        expectedVersion
+      );
+      if (result.conflict) {
+        // Someone else saved first — pull their latest data and re-apply our change on top of it.
+        base = result.current ? buildState(result.current) : base;
+        expectedVersion = typeof result.current?.version === "number" ? result.current.version : expectedVersion;
+        continue;
+      }
+      applyState(next);
+      if (typeof result.version === "number") setDbVersion(result.version);
+      setSyncIssue(result.offline ? "offline" : null);
+      setSaved(true); setTimeout(()=>setSaved(false),1500);
+      return true;
+    }
+    alert("Couldn't save that change — someone else may be editing at the same time. Please try again.");
+    setSyncIssue("conflict");
+    return false;
+  }, [buildState, dbVersion]);
 
   // Shared (not store-specific) fields: name, category, unit, orderUnit, countPerOrderUnit, vendor, notes, frequency, active
   const updateField = (id, field, value) => {
     if (value===null) { setEditingCell(null); return; }
-    persist(items.map(i=>i.id===id?{...i,[field]:value}:i), counts);
+    commitChange(base => ({...base, items: base.items.map(i=>i.id===id?{...i,[field]:value}:i)}));
     setEditingCell(null);
   };
   // Per-store fields: location (auto-fills storeOrder from that store's location list), par, reorder
   const updateStoreField = (id, store, field, value) => {
     if (value===null) { setEditingCell(null); return; }
-    const item = items.find(i=>i.id===id); if(!item) return;
-    const cur = item.storeInfo?.[store] || {};
-    let extra = {};
-    if (field==="location") {
-      const code = locCode(store, value);
-      if (code !== null) extra = { storeOrder: code };
-    }
-    const nextInfo = { ...(item.storeInfo||{}), [store]: { ...cur, [field]: value, ...extra } };
-    persist(items.map(i=>i.id===id?{...i,storeInfo:nextInfo}:i), counts);
+    commitChange(base => {
+      const item = base.items.find(i=>i.id===id); if(!item) return base;
+      const cur = item.storeInfo?.[store] || {};
+      let extra = {};
+      if (field==="location") {
+        const code = (base.lists[store]||[]).find(l=>l.name===value)?.code ?? null;
+        if (code !== null) extra = { storeOrder: code };
+      }
+      const nextInfo = { ...(item.storeInfo||{}), [store]: { ...cur, [field]: value, ...extra } };
+      return {...base, items: base.items.map(i=>i.id===id?{...i,storeInfo:nextInfo}:i)};
+    });
     setEditingCell(null);
   };
-  const updateCount=(id,store,val)=>persist(items,{...counts,[id]:{...(counts[id]||{}),[store]:val}});
-  const toggleStore=(id,store)=>{
-    const item=items.find(i=>i.id===id); if(!item) return;
-    const info={...(item.storeInfo||{})};
-    if(info[store]){
-      delete info[store];
-    }else{
-      const locs=locationsByStore[store]||[];
-      info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,par:0,reorder:0};
-    }
-    persist(items.map(i=>i.id===id?{...i,storeInfo:info}:i), counts);
+  // Count entry happens on every keystroke, so we update the visible number instantly
+  // but debounce the actual save/merge — otherwise every digit typed would trigger its
+  // own fetch-merge-save round trip. Pending saves are flushed on blur and whenever the
+  // app is about to leave view, so nothing typed gets lost.
+  const countPending = useRef({});
+  const commitCountNow = (id, store) => {
+    const key = `${id}::${store}`;
+    const pending = countPending.current[key];
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    delete countPending.current[key];
+    commitChange(base => ({...base, counts: {...base.counts,[id]:{...(base.counts[id]||{}),[store]:pending.val}}}));
   };
-  const deleteItem=(id)=>{if(!confirm("Delete this item?"))return;persist(items.filter(i=>i.id!==id),counts);};
-  // "+ Add" opens a draft in the New Item modal instead of inserting straight into the
-  // (alphabetically-sorted) list — so you can fill everything in before it jumps into place.
-  const addItem=()=>{
+  const flushPendingCounts = () => { Object.keys(countPending.current).forEach(key=>{
+    const [id,store] = key.split("::"); commitCountNow(id,store);
+  }); };
+  useEffect(() => {
+    const onHide = () => { if (document.visibilityState === "hidden") flushPendingCounts(); };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", flushPendingCounts);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", flushPendingCounts);
+    };
+  }, []);
+  const updateCount=(id,store,val)=>{
+    setCounts(c=>({...c,[id]:{...(c[id]||{}),[store]:val}}));
+    const key = `${id}::${store}`;
+    if (countPending.current[key]) clearTimeout(countPending.current[key].timer);
+    countPending.current[key] = { val, timer: setTimeout(()=>commitCountNow(id,store), 600) };
+  };
+  const toggleStore=(id,store)=>{
+    commitChange(base => {
+      const item=base.items.find(i=>i.id===id); if(!item) return base;
+      const info={...(item.storeInfo||{})};
+      if(info[store]){
+        delete info[store];
+      }else{
+        const locs=base.lists[store]||[];
+        info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,par:0,reorder:0};
+      }
+      return {...base, items: base.items.map(i=>i.id===id?{...i,storeInfo:info}:i)};
+    });
+  };
+  const deleteItem=(id)=>{
+    if(!confirm("Delete this item?"))return;
+    commitChange(base => ({...base, items: base.items.filter(i=>i.id!==id)}));
+  };
+  // "+ Add" refreshes from the server first (a natural point to pick up anyone else's
+  // recent changes), then opens a draft in the New Item modal instead of inserting
+  // straight into the (alphabetically-sorted) list — so you can fill everything in
+  // before it jumps into place.
+  const addItem=async ()=>{
+    const fresh = await refreshFromServer();
+    const lb = fresh?.lists ?? locationsByStore;
+    const un = fresh?.units ?? units;
+    const ve = fresh?.vendors ?? vendors;
     const seedStore = selectedStore!=="All" ? selectedStore : STORE_LOCATIONS[0];
-    const defaultLoc = (locationsByStore[seedStore]||[])[0];
-    const item={id:uid(),name:"New Item",category:"",unit:units[0]??"each",storeLocationNum:0,
-      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",
+    const defaultLoc = (lb[seedStore]||[])[0];
+    const item={id:uid(),name:"New Item",category:"",unit:un[0]??"each",storeLocationNum:0,
+      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??ve[0]??"Restaurant Depot",
       storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, par:0, reorder:0 } }};
     setNewItemDraft(item);
     setDraftEditingField(null);
@@ -499,7 +616,7 @@ export default function App(){
   };
   const saveNewItem=()=>{
     if(!newItemDraft) return;
-    persist([...items,newItemDraft],counts);
+    commitChange(base => ({...base, items: [...base.items, newItemDraft]}));
     setNewItemDraft(null);
     setDraftEditingField(null);
   };
@@ -607,7 +724,9 @@ export default function App(){
           finalCounts[id]={...(finalCounts[id]||{}),...byStore};
         });
 
-        persistAll(newItems,finalCounts,newLocByStore,newCat,newUnit,newVend);
+        // Import is a deliberate, full replace — it intentionally ignores whatever
+        // else is on the server rather than merging with it (see decisions doc).
+        commitChange(() => ({ items:newItems, counts:finalCounts, lists:newLocByStore, categories:newCat, units:newUnit, vendors:newVend }));
         setImportStatus({total:newItems.length});
         setTimeout(()=>setImportStatus(null),4000);
       }catch(err){alert("Import failed: "+err.message);}
@@ -653,9 +772,15 @@ export default function App(){
   function clearCounts(){
     if(!storeChosen) return;
     if(!confirm(`Clear all counts for ${selectedStore}? This cannot be undone.`)) return;
-    const nc={...counts};
-    Object.keys(nc).forEach(id=>{ if(nc[id]&&selectedStore in nc[id]){ nc[id]={...nc[id]}; delete nc[id][selectedStore]; } });
-    persist(items, nc);
+    // Cancel any not-yet-saved keystrokes for this store so they don't reappear after the clear.
+    Object.keys(countPending.current).forEach(key=>{
+      if (key.endsWith(`::${selectedStore}`)) { clearTimeout(countPending.current[key].timer); delete countPending.current[key]; }
+    });
+    commitChange(base => {
+      const nc={...base.counts};
+      Object.keys(nc).forEach(id=>{ if(nc[id]&&selectedStore in nc[id]){ nc[id]={...nc[id]}; delete nc[id][selectedStore]; } });
+      return {...base, counts: nc};
+    });
   }
 
   return(
@@ -666,6 +791,8 @@ export default function App(){
         <div style={s.hL}><span style={{fontSize:24}}>🍽️</span><div><div style={s.title}>Rio Bravito Inventory</div><div style={s.sub}>{date}</div></div></div>
         <div style={s.hR}>
           {saved&&<span style={s.savedBadge}>✓ Saved</span>}
+          {syncIssue==="offline"&&<span style={s.syncWarnBadge}>⚠️ Offline — saving on this device only</span>}
+          {syncIssue==="conflict"&&<span style={s.syncWarnBadge}>⚠️ Couldn't save last change — try again</span>}
           {importStatus&&<span style={s.importBadge}>{importStatus.total!==undefined?`✓ ${importStatus.total} items loaded`:"✓ Lists updated"}</span>}
           {storeChosen
             ? <div style={s.prog}><div style={s.progBar}><div style={{...s.progFill,width:`${storeItems.length?(countedCount/storeItems.length)*100:0}%`}}/></div><span style={s.progLbl}>{countedCount}/{storeItems.length}</span></div>
@@ -675,13 +802,13 @@ export default function App(){
 
       <div style={s.storeRow}>
         {["All",...STORE_LOCATIONS].map(store=>(
-          <button key={store} style={{...s.storePill,...(selectedStore===store?s.storePillOn:{})}} onClick={()=>{setSelectedStore(store);setFilterLoc("All");}}>{store}</button>
+          <button key={store} style={{...s.storePill,...(selectedStore===store?s.storePillOn:{})}} onClick={()=>{setSelectedStore(store);setFilterLoc("All");refreshFromServer();}}>{store}</button>
         ))}
       </div>
 
       <div style={s.nav}>
         {[["count","📋 Count"],["manage","⚙️ Manage"],["order",`🛒 Order${orderItems.length?` (${orderItems.length})`:""}`],["lists","📂 Lists"]].map(([v,l])=>(
-          <button key={v} style={{...s.navBtn,...(view===v?s.navA:{})}} onClick={()=>setView(v)}>{l}</button>
+          <button key={v} style={{...s.navBtn,...(view===v?s.navA:{})}} onClick={()=>{setView(v);refreshFromServer();}}>{l}</button>
         ))}
       </div>
 
@@ -724,7 +851,7 @@ export default function App(){
                   <div style={s.qtyLbl}>📥 QTY ON HAND ({cLabel}):</div>
                   <div style={s.cRow}>
                     <button style={s.nudge} onClick={()=>updateCount(item.id,selectedStore,Math.max(0,(parseFloat(val)||0)-1))}>−</button>
-                    <input style={{...s.cIn,background:st==="critical"?"#fff0f0":st==="low"?"#fffbf0":val!==""?"#f0fff4":"#fff",borderColor:val===""?"#f59e0b":SC[st]}} type="number" min="0" placeholder="—" value={val} onChange={e=>updateCount(item.id,selectedStore,e.target.value)}/>
+                    <input style={{...s.cIn,background:st==="critical"?"#fff0f0":st==="low"?"#fffbf0":val!==""?"#f0fff4":"#fff",borderColor:val===""?"#f59e0b":SC[st]}} type="number" min="0" placeholder="—" value={val} onChange={e=>updateCount(item.id,selectedStore,e.target.value)} onBlur={()=>commitCountNow(item.id,selectedStore)}/>
                     <button style={s.nudge} onClick={()=>updateCount(item.id,selectedStore,(parseFloat(val)||0)+1)}>+</button>
                     <span style={s.uLbl}>{cLabel}</span>
                   </div>
@@ -774,7 +901,7 @@ export default function App(){
                 <div style={s.mTop}>
                   <div style={{...s.fg,flex:1}}>
                     <div style={s.fl}>Item Name</div>
-                    {isEditing(item.id,"name")?<EditCell value={item.name} width={190} onSave={v=>updateField(item.id,"name",v)}/>:<span style={s.ef} onClick={()=>setEditingCell({itemId:item.id,field:"name"})}>{item.name}</span>}
+                    {isEditing(item.id,"name")?<EditCell value={item.name} width={190} onSave={v=>updateField(item.id,"name",v)}/>:<span style={s.ef} onClick={()=>{refreshFromServer();setEditingCell({itemId:item.id,field:"name"});}}>{item.name}</span>}
                   </div>
                   <button style={{...s.actBtn,background:item.active==="Yes"?"#dcfce7":"#fee2e2",color:item.active==="Yes"?"#166534":"#991b1b"}} onClick={()=>updateField(item.id,"active",item.active==="Yes"?"No":"Yes")}>{item.active==="Yes"?"Active":"Inactive"}</button>
                   <button style={s.delBtn} onClick={()=>deleteItem(item.id)}>✕</button>
@@ -782,7 +909,7 @@ export default function App(){
                 <ItemFieldsBody
                   item={item}
                   isEd={(field,store=null)=>isEditing(item.id,field,store)}
-                  startEdit={(field,store=null)=>setEditingCell({itemId:item.id,field,store})}
+                  startEdit={(field,store=null)=>{refreshFromServer();setEditingCell({itemId:item.id,field,store});}}
                   onField={(field,value)=>updateField(item.id,field,value)}
                   onStoreField={(store,field,value)=>updateStoreField(item.id,store,field,value)}
                   onToggleStore={(store)=>toggleStore(item.id,store)}
@@ -855,14 +982,10 @@ export default function App(){
               title={`${store} Locations`}
               subtitle="Each location has a sort code — items sort by this in the Count tab"
               onAdd={()=>{
-                const list=locationsByStore[store]||[];
-                const newList=[...list,{name:"New Location",code:9}];
-                persistAll(items,counts,{...locationsByStore,[store]:newList},categories,units,vendors);
+                commitChange(base => ({...base, lists: {...base.lists,[store]:[...(base.lists[store]||[]),{name:"New Location",code:9}]}}));
               }}
             >
               {[...(locationsByStore[store]||[])].sort((a,b)=>a.code-b.code).map((loc,i)=>{
-                const list=locationsByStore[store]||[];
-                const idx=list.indexOf(loc);
                 return (
                 <div key={i} style={s.listRow}>
                   <div style={{display:"flex",alignItems:"center",gap:8,flex:1,flexWrap:"wrap"}}>
@@ -872,8 +995,11 @@ export default function App(){
                       width={55}
                       label="Code"
                       onSave={v=>{
-                        const nl=list.map((l,j)=>j===idx?{...l,code:Number(v)||0}:l);
-                        persistAll(items,counts,{...locationsByStore,[store]:[...nl].sort((a,b)=>a.code-b.code)},categories,units,vendors);
+                        const targetName=loc.name;
+                        commitChange(base => {
+                          const nl=(base.lists[store]||[]).map(l=>l.name===targetName?{...l,code:Number(v)||0}:l).sort((a,b)=>a.code-b.code);
+                          return {...base, lists: {...base.lists,[store]:nl}};
+                        });
                       }}
                     />
                     <InlineEdit
@@ -882,19 +1008,22 @@ export default function App(){
                       label="Name"
                       onSave={v=>{
                         const oldName=loc.name;
-                        const nl=list.map((l,j)=>j===idx?{...l,name:v}:l);
-                        // Update any items that used the old location name at this store
-                        const ni=items.map(item=>{
-                          if(item.storeInfo?.[store]?.location!==oldName) return item;
-                          return {...item,storeInfo:{...item.storeInfo,[store]:{...item.storeInfo[store],location:v}}};
+                        commitChange(base => {
+                          const nl=(base.lists[store]||[]).map(l=>l.name===oldName?{...l,name:v}:l);
+                          // Update any items that used the old location name at this store
+                          const ni=base.items.map(item=>{
+                            if(item.storeInfo?.[store]?.location!==oldName) return item;
+                            return {...item,storeInfo:{...item.storeInfo,[store]:{...item.storeInfo[store],location:v}}};
+                          });
+                          return {...base, items: ni, lists: {...base.lists,[store]:nl}};
                         });
-                        persistAll(ni,counts,{...locationsByStore,[store]:nl},categories,units,vendors);
                       }}
                     />
                   </div>
                   <button style={s.rowDel} onClick={()=>{
                     if(!confirm(`Delete "${loc.name}"?`))return;
-                    persistAll(items,counts,{...locationsByStore,[store]:list.filter((_,j)=>j!==idx)},categories,units,vendors);
+                    const targetName=loc.name;
+                    commitChange(base => ({...base, lists: {...base.lists,[store]:(base.lists[store]||[]).filter(l=>l.name!==targetName)}}));
                   }}>✕</button>
                 </div>
               );})}
@@ -905,17 +1034,18 @@ export default function App(){
           <ListSection
             title="Vendors"
             subtitle="For places like Scotts where you'd pull from existing stock. Suppliers with pricing (Restaurant Depot, Costco, etc.) are managed in the Supplier Compare app and show up in the vendor picker automatically — no need to add them here."
-            onAdd={()=>persistAll(items,counts,locationsByStore,[...categories],units,[...vendors,"New Vendor"])}
+            onAdd={()=>commitChange(base => ({...base, vendors: [...base.vendors,"New Vendor"]}))}
           >
             {vendors.map((v,i)=>(
               <div key={i} style={s.listRow}>
                 <InlineEdit value={v} width={200} onSave={nv=>{
-                  const nw=vendors.map((x,j)=>j===i?nv:x);
-                  persistAll(items,counts,locationsByStore,categories,units,nw);
+                  const target=v;
+                  commitChange(base => ({...base, vendors: base.vendors.map(x=>x===target?nv:x)}));
                 }}/>
                 <button style={s.rowDel} onClick={()=>{
                   if(vendors.length<=1){alert("Must keep at least one vendor.");return;}
-                  persistAll(items,counts,locationsByStore,categories,units,vendors.filter((_,j)=>j!==i));
+                  const target=v;
+                  commitChange(base => base.vendors.length<=1 ? base : ({...base, vendors: base.vendors.filter(x=>x!==target)}));
                 }}>✕</button>
               </div>
             ))}
@@ -924,17 +1054,18 @@ export default function App(){
           {/* ── CATEGORIES ── */}
           <ListSection
             title="Categories"
-            onAdd={()=>persistAll(items,counts,locationsByStore,[...categories,"New Category"],units,vendors)}
+            onAdd={()=>commitChange(base => ({...base, categories: [...base.categories,"New Category"]}))}
           >
             {categories.map((c,i)=>(
               <div key={i} style={s.listRow}>
                 <InlineEdit value={c} width={200} onSave={nv=>{
-                  const nc=categories.map((x,j)=>j===i?nv:x);
-                  persistAll(items,counts,locationsByStore,nc,units,vendors);
+                  const target=c;
+                  commitChange(base => ({...base, categories: base.categories.map(x=>x===target?nv:x)}));
                 }}/>
                 <button style={s.rowDel} onClick={()=>{
                   if(categories.length<=1){alert("Must keep at least one category.");return;}
-                  persistAll(items,counts,locationsByStore,categories.filter((_,j)=>j!==i),units,vendors);
+                  const target=c;
+                  commitChange(base => base.categories.length<=1 ? base : ({...base, categories: base.categories.filter(x=>x!==target)}));
                 }}>✕</button>
               </div>
             ))}
@@ -943,17 +1074,18 @@ export default function App(){
           {/* ── UNITS ── */}
           <ListSection
             title="Units"
-            onAdd={()=>persistAll(items,counts,locationsByStore,categories,[...units,"New Unit"],vendors)}
+            onAdd={()=>commitChange(base => ({...base, units: [...base.units,"New Unit"]}))}
           >
             {units.map((u,i)=>(
               <div key={i} style={s.listRow}>
                 <InlineEdit value={u} width={200} onSave={nv=>{
-                  const nu=units.map((x,j)=>j===i?nv:x);
-                  persistAll(items,counts,locationsByStore,categories,nu,vendors);
+                  const target=u;
+                  commitChange(base => ({...base, units: base.units.map(x=>x===target?nv:x)}));
                 }}/>
                 <button style={s.rowDel} onClick={()=>{
                   if(units.length<=1){alert("Must keep at least one unit.");return;}
-                  persistAll(items,counts,locationsByStore,categories,units.filter((_,j)=>j!==i),vendors);
+                  const target=u;
+                  commitChange(base => base.units.length<=1 ? base : ({...base, units: base.units.filter(x=>x!==target)}));
                 }}>✕</button>
               </div>
             ))}
@@ -1060,6 +1192,7 @@ const s={
   hL:{display:"flex",alignItems:"center",gap:10},hR:{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",justifyContent:"flex-end"},
   title:{fontSize:19,fontWeight:700},sub:{fontSize:10,opacity:0.6,marginTop:1},
   savedBadge:{background:"#22c55e",color:"#fff",borderRadius:12,padding:"2px 10px",fontSize:11,fontWeight:700},
+  syncWarnBadge:{background:"#f59e0b",color:"#fff",borderRadius:12,padding:"2px 10px",fontSize:11,fontWeight:700},
   importBadge:{background:"#3b82f6",color:"#fff",borderRadius:12,padding:"2px 10px",fontSize:11,fontWeight:700},
   prog:{display:"flex",alignItems:"center",gap:6},
   progBar:{width:70,height:6,background:"rgba(255,255,255,0.2)",borderRadius:3,overflow:"hidden"},

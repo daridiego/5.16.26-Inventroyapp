@@ -37,20 +37,31 @@ async function loadFromDatabase() {
   return payload.data && typeof payload.data === "object" ? payload.data : payload;
 }
 
-async function saveToDatabase(data) {
-  if (!hasDatabaseConfig()) return false;
+// Saves with optimistic concurrency: `expectedVersion` should be the `version` last
+// seen from loadInventoryData/saveInventoryData. If someone else has saved since
+// then, the server rejects the write (409 conflict) instead of silently overwriting
+// their change, and hands back its current data + version so the caller can re-apply
+// its change on top of it and retry.
+async function saveToDatabase(data, expectedVersion) {
+  if (!hasDatabaseConfig()) return { saved: false, offline: true };
 
   const response = await fetch(DB_URL, {
     method: "PUT",
     headers: buildHeaders(),
-    body: JSON.stringify(data),
+    body: JSON.stringify({ ...data, expectedVersion }),
   });
+
+  if (response.status === 409) {
+    const payload = await response.json().catch(() => ({}));
+    return { saved: false, conflict: true, current: payload.current || null };
+  }
 
   if (!response.ok) {
     throw new Error(`Database save failed (${response.status})`);
   }
 
-  return true;
+  const payload = await response.json().catch(() => ({}));
+  return { saved: true, version: payload.version };
 }
 
 function loadFromLocalStorage() {
@@ -85,15 +96,21 @@ export async function loadInventoryData() {
   return loadFromLocalStorage();
 }
 
-export async function saveInventoryData(data) {
+// Returns { saved, conflict, current, version, offline, localSaved }. On a conflict,
+// `current` is the database's latest data (with its own `version`) — the caller
+// should re-apply its change on top of it and call this again.
+export async function saveInventoryData(data, expectedVersion) {
   const localSaved = saveToLocalStorage(data);
 
   try {
-    const dbSaved = await saveToDatabase(data);
-    return dbSaved || localSaved;
+    const result = await saveToDatabase(data, expectedVersion);
+    if (result.saved) {
+      saveToLocalStorage({ ...data, version: result.version });
+    }
+    return { ...result, localSaved };
   } catch {
     // If DB fails, keep app usable with local persistence.
-    return localSaved;
+    return { saved: false, offline: true, localSaved };
   }
 }
 

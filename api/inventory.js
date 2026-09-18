@@ -10,6 +10,34 @@ async function kv(method, ...args) {
   return res.json();
 }
 
+// Decides whether a PUT can go through, given what's currently stored and the
+// incoming request body. Pulled out as a plain function so this concurrency logic
+// can be unit-tested without a live Redis connection.
+//
+// `current` is the parsed value already in Redis (or null if nothing saved yet).
+// `body` is the parsed PUT body: { expectedVersion, items, counts, lists }.
+//
+// If the caller's expectedVersion doesn't match what's actually stored, someone
+// else saved in between their read and this write — reject instead of silently
+// clobbering that change. A missing expectedVersion (an older client that hasn't
+// picked up this change yet) is let through for backward compatibility, but the
+// data still gets versioned going forward so newer clients can rely on it.
+//
+// Note: this is a read-then-write check inside one request, not a single atomic
+// Redis operation — it closes the window from "unbounded" down to the few
+// milliseconds between this function's own get and set, which is enough for a
+// small team, but two writes landing in that exact instant could in theory both
+// pass. A real compare-and-swap (e.g. a Lua script) would close that fully.
+function resolvePut(current, body) {
+  const currentVersion = current && typeof current.version === "number" ? current.version : 0;
+  const { expectedVersion, ...data } = body || {};
+  if (typeof expectedVersion === "number" && expectedVersion !== currentVersion) {
+    return { ok: false, current: current || {} };
+  }
+  const version = currentVersion + 1;
+  return { ok: true, version, payload: { ...data, version } };
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, PUT, OPTIONS");
@@ -24,9 +52,17 @@ export default async function handler(req, res) {
 
   if (req.method === "PUT") {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    await kv("set", KEY, JSON.stringify(body));
-    return res.status(200).json({ ok: true });
+    const result = await kv("get", KEY);
+    const current = result.result ? JSON.parse(result.result) : null;
+    const resolved = resolvePut(current, body);
+    if (!resolved.ok) {
+      return res.status(409).json({ error: "conflict", current: resolved.current });
+    }
+    await kv("set", KEY, JSON.stringify(resolved.payload));
+    return res.status(200).json({ ok: true, version: resolved.version });
   }
 
   return res.status(405).json({ error: "Method not allowed" });
 }
+
+export { resolvePut };
