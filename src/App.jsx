@@ -461,38 +461,52 @@ export default function App(){
   // someone else saved in between our read and our write, the server rejects it
   // (409) and we retry on top of THEIR latest data, up to a few times. That way two
   // people editing at the same time never silently lose each other's changes.
-  const commitChange = useCallback(async (apply) => {
-    let base = buildState(null);
-    let expectedVersion = dbVersion;
-    try {
-      const remote = await loadInventoryData();
-      if (remote) {
-        base = buildState(remote);
-        if (typeof remote.version === "number") expectedVersion = remote.version;
-      }
-    } catch { /* offline — proceed with what we already have locally */ }
+  // Updates the screen instantly (no waiting on the network), then saves safely in
+  // the background: fetches the latest server data, re-applies this same change on
+  // top of it, and retries if someone else saved in between — so nothing ever feels
+  // slow to use, but a save still can't silently clobber someone else's change.
+  const commitChange = useCallback((apply) => {
+    const optimistic = apply(buildState(null));
+    applyState(optimistic);
+    setSaved(true); setTimeout(()=>setSaved(false),1500);
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const next = apply(base);
-      const result = await saveInventoryData(
-        { items: next.items, counts: next.counts, lists: { locationsByStore: next.lists, categories: next.categories, units: next.units, vendors: next.vendors } },
-        expectedVersion
-      );
-      if (result.conflict) {
-        // Someone else saved first — pull their latest data and re-apply our change on top of it.
-        base = result.current ? buildState(result.current) : base;
-        expectedVersion = typeof result.current?.version === "number" ? result.current.version : expectedVersion;
-        continue;
+    (async () => {
+      let base = optimistic;
+      let expectedVersion = dbVersion;
+      let hadConflict = false;
+      try {
+        const remote = await loadInventoryData();
+        if (remote) {
+          base = buildState(remote);
+          if (typeof remote.version === "number") expectedVersion = remote.version;
+        }
+      } catch { /* offline — proceed with what we already have locally */ }
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const next = attempt === 0 && base === optimistic ? optimistic : apply(base);
+        const result = await saveInventoryData(
+          { items: next.items, counts: next.counts, lists: { locationsByStore: next.lists, categories: next.categories, units: next.units, vendors: next.vendors } },
+          expectedVersion
+        );
+        if (result.conflict) {
+          // Someone else saved first — pull their latest data and re-apply our change on top of it,
+          // then reflect that merged result on screen (it folds in their change too).
+          hadConflict = true;
+          base = result.current ? buildState(result.current) : base;
+          expectedVersion = typeof result.current?.version === "number" ? result.current.version : expectedVersion;
+          continue;
+        }
+        // Only re-render with the fetched-and-reapplied result when it could actually
+        // differ from what's already on screen (i.e. a conflict pulled in someone
+        // else's change) — otherwise this would just be a same-content re-render.
+        if (hadConflict) applyState(next);
+        if (typeof result.version === "number") setDbVersion(result.version);
+        setSyncIssue(result.offline ? "offline" : null);
+        return;
       }
-      applyState(next);
-      if (typeof result.version === "number") setDbVersion(result.version);
-      setSyncIssue(result.offline ? "offline" : null);
-      setSaved(true); setTimeout(()=>setSaved(false),1500);
-      return true;
-    }
-    alert("Couldn't save that change — someone else may be editing at the same time. Please try again.");
-    setSyncIssue("conflict");
-    return false;
+      alert("Couldn't save that change — someone else may be editing at the same time. Please try again.");
+      setSyncIssue("conflict");
+    })();
   }, [buildState, dbVersion]);
 
   // Shared (not store-specific) fields: name, category, unit, orderUnit, countPerOrderUnit, vendor, notes, frequency, active
@@ -569,15 +583,14 @@ export default function App(){
   // recent changes), then opens a draft in the New Item modal instead of inserting
   // straight into the (alphabetically-sorted) list — so you can fill everything in
   // before it jumps into place.
-  const addItem=async ()=>{
-    const fresh = await refreshFromServer();
-    const lb = fresh?.lists ?? locationsByStore;
-    const un = fresh?.units ?? units;
-    const ve = fresh?.vendors ?? vendors;
+  const addItem=()=>{
+    // Opens the draft immediately with what we already have locally — refreshing in
+    // the background (not awaited) so a slow connection never delays the modal.
+    refreshFromServer();
     const seedStore = selectedStore!=="All" ? selectedStore : STORE_LOCATIONS[0];
-    const defaultLoc = (lb[seedStore]||[])[0];
-    const item={id:uid(),name:"New Item",category:"",unit:un[0]??"each",storeLocationNum:0,
-      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??ve[0]??"Restaurant Depot",
+    const defaultLoc = (locationsByStore[seedStore]||[])[0];
+    const item={id:uid(),name:"New Item",category:"",unit:units[0]??"each",storeLocationNum:0,
+      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",
       storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, par:0, reorder:0 } }};
     setNewItemDraft(item);
     setDraftEditingField(null);
