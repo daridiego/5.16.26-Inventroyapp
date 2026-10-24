@@ -10,6 +10,34 @@ async function kv(method, ...args) {
   return res.json();
 }
 
+// Writes require the shared save password; reads stay open so the supplier
+// compare app, the dish creator, and Quick Order can keep reading this data
+// over plain GETs.
+//
+// The password lives only in this Vercel project's APP_WRITE_TOKEN
+// environment variable. It is never part of the frontend bundle, because
+// anything built into the frontend can be read by anyone who opens the
+// deployed site.
+//
+// If APP_WRITE_TOKEN isn't set, writes are refused rather than quietly
+// allowed: a deployment that lost its environment variable should fail
+// loudly instead of silently going back to accepting anonymous writes.
+function writeAuthFailure(req) {
+  const expected = process.env.APP_WRITE_TOKEN;
+  if (!expected) {
+    return {
+      status: 503,
+      body: { error: "Writes are disabled: this deployment has no APP_WRITE_TOKEN set." },
+    };
+  }
+  const header = req.headers.authorization || "";
+  const provided = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  if (!provided || provided !== expected) {
+    return { status: 401, body: { error: "Save password missing or incorrect." } };
+  }
+  return null;
+}
+
 // Decides whether a PUT can go through, given what's currently stored and the
 // incoming request body. Pulled out as a plain function so this concurrency logic
 // can be unit-tested without a live Redis connection.
@@ -51,6 +79,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "PUT") {
+    const denied = writeAuthFailure(req);
+    if (denied) return res.status(denied.status).json(denied.body);
+
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const result = await kv("get", KEY);
     const current = result.result ? JSON.parse(result.result) : null;

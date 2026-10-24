@@ -1,3 +1,5 @@
+import { fetchWithWriteAuth } from "./writeAuth.js";
+
 const STORAGE_KEY = "resto-inv-v3";
 
 const DB_URL = import.meta.env.VITE_INVENTORY_DB_URL;
@@ -45,11 +47,17 @@ async function loadFromDatabase() {
 async function saveToDatabase(data, expectedVersion) {
   if (!hasDatabaseConfig()) return { saved: false, offline: true };
 
-  const response = await fetch(DB_URL, {
+  // Saving now needs the shared save password. fetchWithWriteAuth attaches it
+  // from this browser's localStorage, and if the server says it's missing or
+  // wrong (401) it asks for it once and retries.
+  const response = await fetchWithWriteAuth(DB_URL, {
     method: "PUT",
-    headers: buildHeaders(),
     body: JSON.stringify({ ...data, expectedVersion }),
   });
+
+  if (response.status === 401) {
+    return { saved: false, unauthorized: true };
+  }
 
   if (response.status === 409) {
     const payload = await response.json().catch(() => ({}));
