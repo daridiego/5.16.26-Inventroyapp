@@ -501,7 +501,10 @@ export default function App(){
         // else's change) — otherwise this would just be a same-content re-render.
         if (hadConflict) applyState(next);
         if (typeof result.version === "number") setDbVersion(result.version);
-        setSyncIssue(result.offline ? "offline" : null);
+        // A save that never reached the server must say so. "unauthorized"
+        // (wrong or missing save password) used to fall through to null here
+        // and show nothing at all, so the change looked saved when it wasn't.
+        setSyncIssue(result.unauthorized ? "unauthorized" : result.offline ? "offline" : null);
         return;
       }
       alert("Couldn't save that change — someone else may be editing at the same time. Please try again.");
@@ -806,6 +809,7 @@ export default function App(){
           {saved&&<span style={s.savedBadge}>✓ Saved</span>}
           {syncIssue==="offline"&&<span style={s.syncWarnBadge}>⚠️ Offline — saving on this device only</span>}
           {syncIssue==="conflict"&&<span style={s.syncWarnBadge}>⚠️ Couldn't save last change — try again</span>}
+          {syncIssue==="unauthorized"&&<span style={s.syncWarnBadge}>⚠️ NOT SAVED — wrong save password</span>}
           {importStatus&&<span style={s.importBadge}>{importStatus.total!==undefined?`✓ ${importStatus.total} items loaded`:"✓ Lists updated"}</span>}
           {storeChosen
             ? <div style={s.prog}><div style={s.progBar}><div style={{...s.progFill,width:`${storeItems.length?(countedCount/storeItems.length)*100:0}%`}}/></div><span style={s.progLbl}>{countedCount}/{storeItems.length}</span></div>
