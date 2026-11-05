@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import { loadInventoryData, saveInventoryData, loadSupplierNames } from "./storage";
+import { pickUpFrom, pickUpFromFor, pickUpIsInferred, pickUpOptions } from "./pickUp";
 
 // ── DEFAULT REFERENCE LISTS (seeded from your spreadsheet) ───────────────────
 const DEFAULT_LOCATIONS = [
@@ -122,6 +123,10 @@ function exportAll(items, counts, locationsByStore, categories, units, vendors){
       "Frequency":item.frequency,
       "Active":item.active,
       "Vendor":item.vendor,
+      // Exported as it is stored, not as it is derived: a blank here means
+      // nobody has set it, and round-tripping the derived value would quietly
+      // turn an inference into a record.
+      "Pick Up From":item.pickUpFrom||"",
       "Store Loc #":item.storeLocationNum,
       "Stores":Object.keys(item.storeInfo||{}).join(", "),
     };
@@ -164,11 +169,14 @@ function exportAll(items, counts, locationsByStore, categories, units, vendors){
   XLSX.writeFile(wb, `inventory-${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-function buildPOData(orderItems, date){
-  // Group by vendor, sort within each vendor by storeOrder
+function buildPOData(orderItems, date, store){
+  // Group by vendor, sort within each vendor by storeOrder. Items fetched from
+  // one of our own places get their own heading instead -- nobody is sending
+  // that list to a supplier, it's a list of what to put in the car.
   const vendorMap = {};
   orderItems.forEach(item => {
-    const v = item.vendor || "Other";
+    const place = pickUpFromFor(item, store);
+    const v = place ? `Pick up — ${place}` : (item.vendor || "Other");
     if (!vendorMap[v]) vendorMap[v] = [];
     vendorMap[v].push(item);
   });
@@ -263,7 +271,9 @@ function InlineEdit({ value, onSave, type="text", width=160, label }) {
 
 // ── Shared editable field body for an item card — used by both the Manage list
 // and the New Item modal, so both stay in sync with one implementation.
-function ItemFieldsBody({item,isEd,startEdit,onField,onStoreField,onToggleStore,categories,units,vendorOptions,locationsByStore,locCode,locationNamesFor,hasStore}){
+function ItemFieldsBody({item,isEd,startEdit,onField,onStoreField,onToggleStore,categories,units,vendorOptions,pickUpChoices,locationsByStore,locCode,locationNamesFor,hasStore}){
+  const pickUp = pickUpFrom(item);
+  const inferred = pickUpIsInferred(item);
   return (
     <>
       <div style={s.mFields}>
@@ -286,6 +296,22 @@ function ItemFieldsBody({item,isEd,startEdit,onField,onStoreField,onToggleStore,
         <div style={s.fg}>
           <div style={s.fl}>Vendor</div>
           {isEd("vendor")?<EditCell value={item.vendor} options={vendorOptions} width={140} onSave={v=>onField("vendor",v)}/>:<span style={s.ef} onClick={()=>startEdit("vendor")}>{item.vendor||"—"}</span>}
+        </div>
+        {/* Pick up from — one of our own places, when the item isn't ordered at
+            all but fetched. Overrides where the order guide sends you; leaves
+            the vendor and its price alone, because that's still what it cost. */}
+        <div style={s.fg}>
+          <div style={s.fl}>Pick up from</div>
+          {isEd("pickUpFrom")
+            ? <EditCell value={pickUp} options={pickUpChoices} width={140} onSave={v=>onField("pickUpFrom",v)}/>
+            : <span
+                style={{...s.ef, ...(pickUp?{background:"#eef2ff",color:"#3730a3",borderStyle:inferred?"dashed":"solid",borderColor:"#c7d2fe"}:{})}}
+                title={inferred
+                  ? `Taken from the vendor field, which used to be the only place to record this. Tap to make it explicit.`
+                  : pickUp ? "" : "Leave blank for anything you actually order"}
+                onClick={()=>startEdit("pickUpFrom")}>
+                {pickUp ? (inferred ? `${pickUp} ?` : pickUp) : "— ordered"}
+              </span>}
         </div>
         {/* Store Loc # — position within the vendor's store (e.g. Restaurant Depot), same for every restaurant */}
         <div style={s.fg}>
@@ -361,6 +387,10 @@ export default function App(){
   const [supplierNames,setSupplierNames]=useState([]); // read-only, from the supplier-compare app
   // Combined list for the item vendor picker: internal sourcing spots (this app) + real suppliers (compare app)
   const vendorOptions = Array.from(new Set([...vendors, ...supplierNames])).sort();
+  // Our own places, for the "Pick up from" picker. Separate list from the
+  // vendors above on purpose: a place we fetch from is not a supplier, and
+  // giving it a price would let it into Supplier Compare's comparison.
+  const pickUpChoices = pickUpOptions(items);
   const [view,setView]=useState("count");
   // Which store is currently in focus. "All" only makes sense in Manage (no filter).
   const [selectedStore,setSelectedStore]=useState(STORE_LOCATIONS[0]);
@@ -593,7 +623,7 @@ export default function App(){
     const seedStore = selectedStore!=="All" ? selectedStore : STORE_LOCATIONS[0];
     const defaultLoc = (locationsByStore[seedStore]||[])[0];
     const item={id:uid(),name:"New Item",category:"",unit:units[0]??"each",storeLocationNum:0,
-      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",
+      notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",pickUpFrom:"",
       storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, par:0, reorder:0 } }};
     setNewItemDraft(item);
     setDraftEditingField(null);
@@ -713,6 +743,9 @@ export default function App(){
             storeLocationNum:num("Store Loc #") ?? 0,
             active:          str("Active")??"Yes",
             vendor:          str("Vendor")??newVend[0]??"Restaurant Depot",
+            // Import is a full replace, so this has to be read back or every
+            // pick-up place would be wiped by the next round-trip.
+            pickUpFrom:      str("Pick Up From")??"",
             notes:           str("Notes")??"",
             frequency:       num("Frequency")??1,
             storeInfo,
@@ -784,7 +817,7 @@ export default function App(){
     .sort((a,b)=>a.storeOrder-b.storeOrder) : [];
   const isEditing=(id,field,store=null)=>editingCell?.itemId===id&&editingCell?.field===field&&(editingCell?.store??null)===store;
 
-  function handlePO(){ setPoData(buildPOData(orderItems, date)); }
+  function handlePO(){ setPoData(buildPOData(orderItems, date, selectedStore)); }
   function clearCounts(){
     if(!storeChosen) return;
     if(!confirm(`Clear all counts for ${selectedStore}? This cannot be undone.`)) return;
@@ -933,6 +966,7 @@ export default function App(){
                   categories={categories}
                   units={units}
                   vendorOptions={vendorOptions}
+                  pickUpChoices={pickUpChoices}
                   locationsByStore={locationsByStore}
                   locCode={locCode}
                   locationNamesFor={locationNamesFor}
@@ -958,8 +992,8 @@ export default function App(){
           ):(
             <div style={{paddingBottom:100}}>
               {/* Summary cards by vendor */}
-              {[...new Set(orderItems.map(i=>i.vendor||"Other"))].sort().map(vendor=>{
-                const vendorItems=orderItems.filter(i=>(i.vendor||"Other")===vendor);
+              {[...new Set(orderItems.map(i=>{const p=pickUpFromFor(i,selectedStore);return p?`Pick up — ${p}`:(i.vendor||"Other");}))].sort().map(vendor=>{
+                const vendorItems=orderItems.filter(i=>{const p=pickUpFromFor(i,selectedStore);return (p?`Pick up — ${p}`:(i.vendor||"Other"))===vendor;});
                 return(
                   <div key={vendor} style={{marginBottom:16}}>
                     <div style={s.vendorHeader}>{vendor}</div>
@@ -1140,6 +1174,7 @@ export default function App(){
                 categories={categories}
                 units={units}
                 vendorOptions={vendorOptions}
+                pickUpChoices={pickUpChoices}
                 locationsByStore={locationsByStore}
                 locCode={locCode}
                 locationNamesFor={locationNamesFor}
