@@ -404,6 +404,10 @@ export default function App(){
   const [poData,setPoData]=useState(null);   // when set, PO overlay is shown
   const [copyDone,setCopyDone]=useState(false);
   const [newItemDraft,setNewItemDraft]=useState(null); // when set, New Item modal is shown
+  // Whether that draft started as a copy — only changes what the modal is
+  // titled, but a modal that says "New Item" over a filled-in form reads like
+  // something went wrong.
+  const [draftFromCopy,setDraftFromCopy]=useState(false);
   const [draftEditingField,setDraftEditingField]=useState(null); // {field, store}
   // dbVersion tracks the last server version we know about, so saves can detect when
   // someone else has saved in between (see commitChange below). syncIssue surfaces
@@ -612,6 +616,24 @@ export default function App(){
     if(!confirm("Delete this item?"))return;
     commitChange(base => ({...base, items: base.items.filter(i=>i.id!==id)}));
   };
+  // Opens a copy in the New Item modal rather than inserting it straight away,
+  // the same as "+ Add" — a duplicate is nearly always one or two edits away
+  // from what you wanted (the next size, the next flavour), and this way you
+  // make them before it lands and jumps into the alphabetical list.
+  //
+  // Copies the fields and the per-store setup; not the id, and not the counts.
+  // A count is how many are on the shelf right now, and the new item has none
+  // of itself on any shelf.
+  const duplicateItem=(id)=>{
+    refreshFromServer();
+    const src=items.find(i=>i.id===id);
+    if(!src) return;
+    const storeInfo={};
+    Object.entries(src.storeInfo||{}).forEach(([store,info])=>{ storeInfo[store]={...info}; });
+    setNewItemDraft({...src, id:uid(), name:`${src.name} (copy)`, storeInfo});
+    setDraftFromCopy(true);
+    setDraftEditingField({field:"name"});
+  };
   // "+ Add" refreshes from the server first (a natural point to pick up anyone else's
   // recent changes), then opens a draft in the New Item modal instead of inserting
   // straight into the (alphabetically-sorted) list — so you can fill everything in
@@ -626,6 +648,7 @@ export default function App(){
       notes:"",frequency:1,active:"Yes",vendor:supplierNames[0]??vendors[0]??"Restaurant Depot",pickUpFrom:"",
       storeInfo:{ [seedStore]: { location:defaultLoc?.name??"Other", storeOrder:defaultLoc?.code??1, par:0, reorder:0 } }};
     setNewItemDraft(item);
+    setDraftFromCopy(false);
     setDraftEditingField(null);
   };
   const updateDraftField=(field,value)=>{
@@ -664,10 +687,12 @@ export default function App(){
     if(!newItemDraft) return;
     commitChange(base => ({...base, items: [...base.items, newItemDraft]}));
     setNewItemDraft(null);
+    setDraftFromCopy(false);
     setDraftEditingField(null);
   };
   const cancelNewItem=()=>{
     setNewItemDraft(null);
+    setDraftFromCopy(false);
     setDraftEditingField(null);
   };
 
@@ -954,6 +979,7 @@ export default function App(){
                     {isEditing(item.id,"name")?<EditCell value={item.name} width={190} onSave={v=>updateField(item.id,"name",v)}/>:<span style={s.ef} onClick={()=>{refreshFromServer();setEditingCell({itemId:item.id,field:"name"});}}>{item.name}</span>}
                   </div>
                   <button style={{...s.actBtn,background:item.active==="Yes"?"#dcfce7":"#fee2e2",color:item.active==="Yes"?"#166534":"#991b1b"}} onClick={()=>updateField(item.id,"active",item.active==="Yes"?"No":"Yes")}>{item.active==="Yes"?"Active":"Inactive"}</button>
+                  <button style={s.dupBtn} title="Make a copy of this item" onClick={()=>duplicateItem(item.id)}>⧉</button>
                   <button style={s.delBtn} onClick={()=>deleteItem(item.id)}>✕</button>
                 </div>
                 <ItemFieldsBody
@@ -1150,8 +1176,8 @@ export default function App(){
           <div style={s.poOverlayHeader}>
             <button style={s.newItemCancelBtn} onClick={cancelNewItem}>Cancel</button>
             <div style={{textAlign:"center"}}>
-              <div style={{fontWeight:700,fontSize:16,color:"#fff"}}>New Item</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.6)"}}>Fill in the details, then save</div>
+              <div style={{fontWeight:700,fontSize:16,color:"#fff"}}>{draftFromCopy?"Duplicate Item":"New Item"}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.6)"}}>{draftFromCopy?"Change what's different, then save":"Fill in the details, then save"}</div>
             </div>
             <button style={s.newItemSaveBtn} onClick={saveNewItem}>Save</button>
           </div>
@@ -1294,6 +1320,9 @@ const s={
   otag:{background:"#e5e7eb",color:"#374151",borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"},
   actBtn:{border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"},
   delBtn:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:7,padding:"4px 10px",fontSize:13,cursor:"pointer"},
+  // Quiet next to Delete — duplicating is harmless, deleting isn't, and they
+  // sit side by side.
+  dupBtn:{background:"#f3f4f6",color:"#4b5563",border:"1px solid #e5e7eb",borderRadius:7,padding:"4px 10px",fontSize:13,cursor:"pointer"},
   storeChip:{background:"#f9fafb",color:"#6b7280",border:"1px solid #d1d5db",borderRadius:14,padding:"4px 9px",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"},
   storeChipOn:{background:"#1a1a2e",color:"#fff",borderColor:"#1a1a2e"},
   storesBlock:{marginTop:10,paddingTop:10,borderTop:"1px dashed #e5e7eb"},
