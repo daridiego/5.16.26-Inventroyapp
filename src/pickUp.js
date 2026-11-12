@@ -14,16 +14,42 @@
 //   - Supplier Compare picks the cheapest supplier for an item. A made-up
 //     El Cafecito price would enter that comparison and win or lose on it.
 //
-// So `pickUpFrom` says where to GO. The supplier and the price underneath
+// So a pick-up place says where to GO. The supplier and the price underneath
 // are untouched and keep costing the item.
 //
-// ── Why `vendor` is read as a fallback ──────────────────────────────────
+// ── Why this is a per-store fact ────────────────────────────────────────
 //
-// Before this field existed, the only place to record it was `vendor`, so
-// 24 items carry "Cafesito", "Rio Bravo" or "Scotts" there. That is not bad
-// data -- it is this exact fact, written in the only box available. Reading
-// it keeps those items working with nothing to migrate, and the moment the
-// field is set on an item, the explicit value wins.
+// It used to be one value on the item, shared by every restaurant. That is
+// wrong, and the fix is the whole point of this module. Two real examples:
+//
+//   Roma tomatoes. Ordering for Rio Bravito, buy them from the best supplier.
+//   Ordering for Scott's, walk over to Rio Bravo -- Scott's goes through a
+//   handful and Rio Bravo is close by. One value on the item cannot say both:
+//   set it and Bravito stops ordering tomatoes, leave it and Scott's drives
+//   to a supplier for four tomatoes.
+//
+//   Red bell peppers. Rio Bravito collects them from Rio Bravo; Rio Bravo
+//   itself buys them. That one works today only because of the self-guard
+//   below, which is a special case of the same rule.
+//
+// So the answer lives in `storeInfo[store].pickUpFrom`, beside that store's
+// par and location, and each restaurant gets its own. An empty string there
+// is a real answer -- "this store orders it" -- not a missing one.
+//
+// ── The fallbacks, and why they still exist ─────────────────────────────
+//
+// Two older places recorded this, and both are still read when a store has
+// no answer of its own:
+//
+//   1. `item.pickUpFrom`  -- the single shared value this replaced.
+//   2. `item.vendor`      -- before even that field existed, 21 items had
+//                            "Cafesito", "Rio Bravo" or "Scotts" typed into
+//                            the vendor box, because it was the only box.
+//
+// A store with its own key never consults either. The chain only runs for a
+// store that has not been answered yet -- a newly ticked restaurant, or data
+// that predates the migration -- where inheriting the item's old shared
+// answer is a better guess than silently deciding nobody picks it up.
 
 // Our own places. A pick-up is from one of these; everything else is a
 // supplier.
@@ -41,42 +67,110 @@ const LEGACY = {
   "scott's": "Scott's",
 };
 
-// Where an item is picked up from, or "" when it is ordered from a supplier
-// like anything else.
-export function pickUpFrom(item) {
+const clean = (v) => String(v ?? "").trim();
+const sameplace = (a, b) => clean(a).toLowerCase() === clean(b).toLowerCase();
+const has = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
+
+// The item's old shared answer: the explicit field, else what the vendor box
+// is really saying. Exported because the migration needs the same reading.
+export function itemLevelPickUp(item) {
   if (!item) return "";
-  const explicit = String(item.pickUpFrom || "").trim();
+  const explicit = clean(item.pickUpFrom);
   if (explicit) return explicit;
-  return LEGACY[String(item.vendor || "").trim().toLowerCase()] || "";
+  return LEGACY[clean(item.vendor).toLowerCase()] || "";
 }
 
-// The same, but for the restaurant you are ordering for.
+// Has this store been given an answer of its own? An empty string counts --
+// "Scott's orders it" is an answer, and the one the fallbacks must not undo.
+export function hasStorePickUp(item, store) {
+  return has(item?.storeInfo?.[store], "pickUpFrom");
+}
+
+// Where this store's answer comes from, which the UI shows differently:
+//   set       -- somebody chose it for this store
+//   inherited -- the item's old shared value, not yet reviewed per store
+//   guessed   -- read out of the vendor box, which is an inference
+//   none      -- it is ordered, and always was
+export function pickUpSource(item, store) {
+  if (hasStorePickUp(item, store)) return "set";
+  if (clean(item?.pickUpFrom)) return "inherited";
+  if (itemLevelPickUp(item)) return "guessed";
+  return "none";
+}
+
+// The stored answer for one store, before the self-guard. This is what the
+// picker shows and what gets saved.
+export function storePickUp(item, store) {
+  const info = item?.storeInfo?.[store];
+  if (has(info, "pickUpFrom")) return clean(info.pickUpFrom);
+  return itemLevelPickUp(item);
+}
+
+// Where to go when ordering FOR `store`, or "" when this store just orders it.
 //
-// The pick-up place is one fact on the item, shared by every restaurant that
-// uses it: Rio Bravito fetches fries from Scott's. Ordering for Scott's, that
-// same item is not a pick-up at all -- Scott's is where it lives, and Scott's
-// buys it from whoever sells it. Without this guard the order guide tells
-// Scott's to go and collect fries from Scott's, and the fries never get
-// ordered by anyone.
+// The self-guard: a restaurant never collects from itself. Ordering for
+// Scott's, an item kept at Scott's is not a pick-up -- it is Scott's stock,
+// and Scott's buys it from whoever sells it. Without this the order guide
+// tells Scott's to go and collect fries from Scott's, and nobody ever orders
+// the fries.
 export function pickUpFromFor(item, store) {
-  const place = pickUpFrom(item);
+  const place = storePickUp(item, store);
   if (!place) return "";
-  if (store && String(store).trim().toLowerCase() === place.trim().toLowerCase()) return "";
+  if (store && sameplace(store, place)) return "";
   return place;
 }
 
-// True when this item's pick-up place came from the legacy `vendor` field
-// rather than from someone setting it. The UI says so, because the two
-// should look different: one is a record, the other is an inference.
-export function pickUpIsInferred(item) {
-  return !String(item?.pickUpFrom || "").trim() && !!pickUpFrom(item);
+// True when this store's place was not chosen for it but read out of the
+// vendor box. The UI draws that differently: one is a record, the other a
+// guess that deserves a glance.
+export function pickUpIsInferred(item, store) {
+  return pickUpSource(item, store) === "guessed";
 }
 
-// Options for the picker: our places, plus anything already saved on an item
-// so a value can never be dropped by not being on the list.
+// Options for the picker: our places, plus anything already saved anywhere,
+// so a value can never be dropped just by not being on the list.
 export function pickUpOptions(items) {
-  const extra = (items || [])
-    .map((i) => String(i?.pickUpFrom || "").trim())
-    .filter((v) => v && !PICKUP_PLACES.includes(v));
-  return ["", ...PICKUP_PLACES, ...Array.from(new Set(extra)).sort()];
+  const extra = [];
+  (items || []).forEach((i) => {
+    extra.push(clean(i?.pickUpFrom));
+    Object.values(i?.storeInfo || {}).forEach((info) => extra.push(clean(info?.pickUpFrom)));
+  });
+  const unknown = Array.from(new Set(extra.filter((v) => v && !PICKUP_PLACES.includes(v)))).sort();
+  return ["", ...PICKUP_PLACES, ...unknown];
+}
+
+// ── migration ───────────────────────────────────────────────────────────
+//
+// Give every store an explicit answer, derived from whatever the item said
+// before, so that today's order guides keep printing exactly what they print
+// now. Deliberately NOT "the old value belonged to Rio Bravito": four items
+// (cooking oil, two glove sizes, fresh jalapenos) are collected by Scott's
+// today, and reading the old value as Bravito-only would quietly move them
+// onto Scott's order sheet without anybody deciding that.
+//
+// The self-guard is applied here too, so the stored value for the store that
+// IS the place is a plain "" rather than a line that reads "Scott's picks up
+// from Scott's".
+export function migrateItemPickUp(item) {
+  const info = item?.storeInfo;
+  if (!info) return item;
+  const stores = Object.keys(info);
+  if (!stores.length) return item;
+  if (stores.every((s) => has(info[s], "pickUpFrom"))) return item;
+
+  const shared = itemLevelPickUp(item);
+  const next = {};
+  stores.forEach((s) => {
+    const cur = info[s] || {};
+    next[s] = has(cur, "pickUpFrom")
+      ? cur
+      : { ...cur, pickUpFrom: sameplace(s, shared) ? "" : shared };
+  });
+  return { ...item, storeInfo: next };
+}
+
+// What the order guide calls that group. Not a supplier name, and it reads
+// as an instruction, because that's what it is.
+export function pickUpLabel(place) {
+  return `Pick up — ${place}`;
 }

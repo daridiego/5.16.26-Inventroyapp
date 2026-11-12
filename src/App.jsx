@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import { loadInventoryData, saveInventoryData, loadSupplierNames } from "./storage";
-import { pickUpFrom, pickUpFromFor, pickUpIsInferred, pickUpOptions } from "./pickUp";
+import { pickUpFromFor, pickUpOptions, pickUpSource, storePickUp, migrateItemPickUp } from "./pickUp";
 
 // ── DEFAULT REFERENCE LISTS (seeded from your spreadsheet) ───────────────────
 const DEFAULT_LOCATIONS = [
@@ -43,7 +43,13 @@ const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
 // New item shape: { storeLocationNum, storeInfo: { [storeName]: { location, storeOrder, par, reorder } } }
 // Note: storeLocationNum (where it sits in the VENDOR's store, e.g. Restaurant Depot, for
 // shopping-list order) is shared across restaurants — it stays on the item, not per-store.
+// Two migrations run in order: the shape one below, then the pick-up one,
+// which needs storeInfo to exist before it can give each store its own
+// answer. Both are idempotent, so this is safe on every load.
 function migrateItem(item){
+  return migrateItemPickUp(migrateItemShape(item));
+}
+function migrateItemShape(item){
   if (item.storeInfo) {
     // Already migrated once. An earlier version of this migration nested storeLocationNum
     // inside each store's info instead of keeping it on the item — repair that here by
@@ -123,9 +129,9 @@ function exportAll(items, counts, locationsByStore, categories, units, vendors){
       "Frequency":item.frequency,
       "Active":item.active,
       "Vendor":item.vendor,
-      // Exported as it is stored, not as it is derived: a blank here means
-      // nobody has set it, and round-tripping the derived value would quietly
-      // turn an inference into a record.
+      // The item-level value this replaced. Still written so an older sheet
+      // keeps round-tripping, but each store's own column below is what wins
+      // on the way back in.
       "Pick Up From":item.pickUpFrom||"",
       "Store Loc #":item.storeLocationNum,
       "Stores":Object.keys(item.storeInfo||{}).join(", "),
@@ -139,13 +145,17 @@ function exportAll(items, counts, locationsByStore, categories, units, vendors){
       row[`${store} Reorder Point`]=info?(info.reorder||""):"";
       row[`${store} On Hand`]=info&&c!==undefined?c:"";
       row[`${store} Need To Order`]=info&&c!==undefined?(needToOrder(info.par,info.reorder,c,item)||""):"";
+      // Written as stored, not as derived: a blank is this store's real answer
+      // ("I order it"), and exporting the inherited value instead would turn a
+      // fallback into a record on the next import.
+      row[`${store} Pick Up From`]=info?(info.pickUpFrom??""):"";
     });
     row["Notes"]=item.notes;
     return row;
   });
   const invWs=XLSX.utils.json_to_sheet(rows);
   const baseWidths=[8,32,14,8,10,10,8,6,16,12,20];
-  const storeWidths=[10,20,8,10,10,12];
+  const storeWidths=[10,20,8,10,10,12,14];
   invWs["!cols"]=[...baseWidths, ...STORE_LOCATIONS.flatMap(()=>storeWidths), 20].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, invWs, "Inventory");
   // Sheet per store: that store's location list (name + sort code)
@@ -272,8 +282,6 @@ function InlineEdit({ value, onSave, type="text", width=160, label }) {
 // ── Shared editable field body for an item card — used by both the Manage list
 // and the New Item modal, so both stay in sync with one implementation.
 function ItemFieldsBody({item,isEd,startEdit,onField,onStoreField,onToggleStore,categories,units,vendorOptions,pickUpChoices,locationsByStore,locCode,locationNamesFor,hasStore}){
-  const pickUp = pickUpFrom(item);
-  const inferred = pickUpIsInferred(item);
   return (
     <>
       <div style={s.mFields}>
@@ -297,22 +305,10 @@ function ItemFieldsBody({item,isEd,startEdit,onField,onStoreField,onToggleStore,
           <div style={s.fl}>Vendor</div>
           {isEd("vendor")?<EditCell value={item.vendor} options={vendorOptions} width={140} onSave={v=>onField("vendor",v)}/>:<span style={s.ef} onClick={()=>startEdit("vendor")}>{item.vendor||"—"}</span>}
         </div>
-        {/* Pick up from — one of our own places, when the item isn't ordered at
-            all but fetched. Overrides where the order guide sends you; leaves
-            the vendor and its price alone, because that's still what it cost. */}
-        <div style={s.fg}>
-          <div style={s.fl}>Pick up from</div>
-          {isEd("pickUpFrom")
-            ? <EditCell value={pickUp} options={pickUpChoices} width={140} onSave={v=>onField("pickUpFrom",v)}/>
-            : <span
-                style={{...s.ef, ...(pickUp?{background:"#eef2ff",color:"#3730a3",borderStyle:inferred?"dashed":"solid",borderColor:"#c7d2fe"}:{})}}
-                title={inferred
-                  ? `Taken from the vendor field, which used to be the only place to record this. Tap to make it explicit.`
-                  : pickUp ? "" : "Leave blank for anything you actually order"}
-                onClick={()=>startEdit("pickUpFrom")}>
-                {pickUp ? (inferred ? `${pickUp} ?` : pickUp) : "— ordered"}
-              </span>}
-        </div>
+        {/* "Pick up from" used to live here, as one value for the whole item.
+            It is a per-store fact -- Scott's collects roma tomatoes from Rio
+            Bravo while Rio Bravito buys them -- so it now sits inside each
+            store's panel below, beside that store's par. */}
         {/* Store Loc # — position within the vendor's store (e.g. Restaurant Depot), same for every restaurant */}
         <div style={s.fg}>
           <div style={s.fl}>Store Loc #</div>
@@ -367,6 +363,34 @@ function ItemFieldsBody({item,isEd,startEdit,onField,onStoreField,onToggleStore,
                   <div style={s.fl}>Reorder At</div>
                   {isEd("reorder",store)?<EditCell value={info.reorder??""} type="number" width={60} onSave={v=>onStoreField(store,"reorder",v)}/>:<span style={s.ef} onClick={()=>startEdit("reorder",store)}>{info.reorder||"—"}</span>}
                 </div>
+                {/* Pick up from — where THIS restaurant gets it. Blank means it
+                    orders the item like anything else. Choosing the store
+                    itself is the same as blank: nobody collects from
+                    themselves. The vendor and its price are untouched either
+                    way, because that is still what the item cost. */}
+                {(()=>{
+                  const place=storePickUp(item,store);
+                  const src=pickUpSource(item,store);
+                  const self=place&&place.trim().toLowerCase()===store.trim().toLowerCase();
+                  const shown=self?"":place;
+                  return (
+                    <div style={s.fg}>
+                      <div style={s.fl}>Pick up from</div>
+                      {isEd("pickUpFrom",store)
+                        ? <EditCell value={place} options={pickUpChoices} width={140} onSave={v=>onStoreField(store,"pickUpFrom",v)}/>
+                        : <span
+                            style={{...s.ef, ...(shown?{background:"#eef2ff",color:"#3730a3",borderStyle:src==="set"?"solid":"dashed",borderColor:"#c7d2fe"}:{})}}
+                            title={
+                              self ? `Set to ${store} itself, which reads the same as ordering it — nobody collects from themselves.`
+                              : src==="guessed" ? "Taken from the Vendor box, which used to be the only place to record this. Tap to make it this store's own answer."
+                              : src==="inherited" ? "Carried over from when this was one value for the whole item. Tap to set it for this store."
+                              : shown ? "" : `${store} orders this like anything else`}
+                            onClick={()=>startEdit("pickUpFrom",store)}>
+                            {shown ? (src==="set" ? shown : `${shown} ?`) : "— ordered"}
+                          </span>}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );
@@ -736,6 +760,11 @@ export default function App(){
         // ── Inventory sheet — full replace ────────────────────────────────
         const invSheet=wb.Sheets["Inventory"]||wb.Sheets[wb.SheetNames[0]];
         const rows=XLSX.utils.sheet_to_json(invSheet);
+        // Which columns the sheet actually has. Needed because a blank cell is
+        // simply absent from a parsed row, and for "Pick Up From" a blank is a
+        // real answer -- "this store orders it" -- not a missing one. Read off
+        // the header so the two can be told apart.
+        const header=new Set((XLSX.utils.sheet_to_json(invSheet,{header:1})[0]||[]).map(h=>String(h).trim()));
         // Build name→id fallback for items that have no ID column yet
         const idByName={};
         items.forEach(i=>{idByName[i.name.toLowerCase().trim()]=i.id;});
@@ -757,6 +786,12 @@ export default function App(){
               par:       num(`${store} Par`) ?? 0,
               reorder:   num(`${store} Reorder Point`) ?? 0,
             };
+            // Only when the sheet carries the column. An older export has no
+            // per-store answers, so leaving the key off lets the migration
+            // derive them again rather than writing a blank over every one.
+            if(header.has(`${store} Pick Up From`)){
+              storeInfo[store].pickUpFrom=str(`${store} Pick Up From`)??"";
+            }
           });
           newItems.push({
             id: resolvedId,
