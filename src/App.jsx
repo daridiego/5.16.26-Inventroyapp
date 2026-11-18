@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import * as XLSX from "xlsx";
 import { loadInventoryData, saveInventoryData, loadSupplierNames } from "./storage";
 import { pickUpFromFor, pickUpOptions, pickUpSource, storePickUp, migrateItemPickUp } from "./pickUp";
+import { shouldAdopt, setStorePresence, isStoreOn } from "./sync";
 
 // ── DEFAULT REFERENCE LISTS (seeded from your spreadsheet) ───────────────────
 const DEFAULT_LOCATIONS = [
@@ -436,15 +437,28 @@ export default function App(){
   // dbVersion tracks the last server version we know about, so saves can detect when
   // someone else has saved in between (see commitChange below). syncIssue surfaces
   // that state in the header when it's not a plain "everything's fine".
-  const [dbVersion,setDbVersion]=useState(0);
   const [syncIssue,setSyncIssue]=useState(null); // null | "offline" | "conflict"
+  // The same three facts as refs, because refreshFromServer and commitChange both
+  // run inside async callbacks that would otherwise read whatever these were when
+  // the callback was created, not what they are when it finally runs.
+  //   savesInFlight — background writes not yet finished. While any is out, this
+  //                   browser knows something the server doesn't.
+  //   knownVersion  — the newest server version we've seen.
+  //   adoptedOnce   — whether we've taken a copy from the server at all yet.
+  const savesInFlight=useRef(0);
+  const knownVersion=useRef(0);
+  const adoptedOnce=useRef(false);
+  const rememberVersion=useCallback((v)=>{
+    if(typeof v!=="number") return;
+    knownVersion.current=v;
+  },[]);
   const importRef=useRef();
   const date=new Date().toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 
   // Helper: look up location code by store + name
   const locCode = (store,name) => (locationsByStore[store]||[]).find(l=>l.name===name)?.code ?? null;
   const locationNamesFor = (store) => (locationsByStore[store]||[]).map(l=>l.name);
-  const hasStore = (item,store) => !!(item.storeInfo && item.storeInfo[store]);
+  const hasStore = (item,store) => isStoreOn(item,store);
 
   // Turns a raw server payload (or nothing) into a full local state shape, falling
   // back to whatever this browser already has for any piece the server doesn't have.
@@ -475,20 +489,35 @@ export default function App(){
   // Called at natural "look before you act" moments (opening an item to edit,
   // hitting + Add, switching tabs/stores, coming back to the app) so everyone is
   // looking at current data rather than whatever was loaded when the tab was opened.
+  //
+  // It only ever moves forward. A refresh that landed while one of our own saves
+  // was still in the air used to adopt the server's older copy and undo what was
+  // on screen — tick a store, tap Location to fill it in, and that tap (a refresh)
+  // unticked the store. shouldAdopt is what decides; see src/sync.js.
   const refreshFromServer = useCallback(async () => {
     try {
       const remote = await loadInventoryData();
       if (!remote) return null;
+      if (!shouldAdopt({
+        remoteVersion: remote.version,
+        knownVersion: knownVersion.current,
+        savesInFlight: savesInFlight.current,
+        adoptedOnce: adoptedOnce.current,
+      })) {
+        setSyncIssue(null);
+        return null;
+      }
       const next = buildState(remote);
       applyState(next);
-      if (typeof remote.version === "number") setDbVersion(remote.version);
+      adoptedOnce.current = true;
+      rememberVersion(remote.version);
       setSyncIssue(null);
       return next;
     } catch {
       setSyncIssue("offline");
       return null;
     }
-  }, [buildState]);
+  }, [buildState, rememberVersion]);
 
   useEffect(() => {
     (async () => {
@@ -528,9 +557,14 @@ export default function App(){
     applyState(optimistic);
     setSaved(true); setTimeout(()=>setSaved(false),1500);
 
+    // From here until the write lands, this browser is ahead of the server, and
+    // a refresh that adopted the server's copy would undo what's on screen.
+    savesInFlight.current += 1;
+
     (async () => {
+     try {
       let base = optimistic;
-      let expectedVersion = dbVersion;
+      let expectedVersion = knownVersion.current;
       let hadConflict = false;
       try {
         const remote = await loadInventoryData();
@@ -558,7 +592,7 @@ export default function App(){
         // differ from what's already on screen (i.e. a conflict pulled in someone
         // else's change) — otherwise this would just be a same-content re-render.
         if (hadConflict) applyState(next);
-        if (typeof result.version === "number") setDbVersion(result.version);
+        rememberVersion(result.version);
         // A save that never reached the server must say so. "unauthorized"
         // (wrong or missing save password) used to fall through to null here
         // and show nothing at all, so the change looked saved when it wasn't.
@@ -567,8 +601,14 @@ export default function App(){
       }
       alert("Couldn't save that change — someone else may be editing at the same time. Please try again.");
       setSyncIssue("conflict");
+     } finally {
+      // However this ended — saved, refused, offline, or thrown — the write is no
+      // longer in the air, and refreshes may adopt the server's copy again. Missing
+      // this would freeze the app on its own data for the rest of the session.
+      savesInFlight.current = Math.max(0, savesInFlight.current - 1);
+     }
     })();
-  }, [buildState, dbVersion]);
+  }, [buildState, rememberVersion]);
 
   // Shared (not store-specific) fields: name, category, unit, orderUnit, countPerOrderUnit, vendor, notes, frequency, active
   const updateField = (id, field, value) => {
@@ -623,17 +663,20 @@ export default function App(){
     if (countPending.current[key]) clearTimeout(countPending.current[key].timer);
     countPending.current[key] = { val, timer: setTimeout(()=>commitCountNow(id,store), 600) };
   };
+  // Decide ticked-or-unticked once, here, from what's on screen — then say that,
+  // rather than "the other one". The change is applied twice (once to the screen,
+  // again on top of whatever the server turns out to hold), and "flip it" applied
+  // twice flips back: the box stayed ticked while the opposite reached the server,
+  // and it came back unticked on the next refresh. See src/sync.js.
   const toggleStore=(id,store)=>{
+    const current=items.find(i=>i.id===id);
+    if(!current) return;
+    const on=!isStoreOn(current,store);
     commitChange(base => {
       const item=base.items.find(i=>i.id===id); if(!item) return base;
-      const info={...(item.storeInfo||{})};
-      if(info[store]){
-        delete info[store];
-      }else{
-        const locs=base.lists[store]||[];
-        info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,par:0,reorder:0};
-      }
-      return {...base, items: base.items.map(i=>i.id===id?{...i,storeInfo:info}:i)};
+      const next=setStorePresence(item,store,on,base.lists[store]||[]);
+      if(next===item) return base;
+      return {...base, items: base.items.map(i=>i.id===id?next:i)};
     });
   };
   const deleteItem=(id)=>{
@@ -694,18 +737,10 @@ export default function App(){
     });
     setDraftEditingField(null);
   };
+  // The draft isn't saved until you hit Save, so nothing can refresh it out from
+  // under you — but it goes through the same function so both read alike.
   const toggleDraftStore=(store)=>{
-    setNewItemDraft(d=>{
-      if(!d) return d;
-      const info={...(d.storeInfo||{})};
-      if(info[store]){
-        delete info[store];
-      }else{
-        const locs=locationsByStore[store]||[];
-        info[store]={location:locs[0]?.name??"",storeOrder:locs[0]?.code??1,par:0,reorder:0};
-      }
-      return {...d,storeInfo:info};
-    });
+    setNewItemDraft(d=>d?setStorePresence(d,store,!isStoreOn(d,store),locationsByStore[store]||[]):d);
   };
   const saveNewItem=()=>{
     if(!newItemDraft) return;
