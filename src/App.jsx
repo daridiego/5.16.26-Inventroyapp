@@ -438,6 +438,8 @@ export default function App(){
   // someone else has saved in between (see commitChange below). syncIssue surfaces
   // that state in the header when it's not a plain "everything's fine".
   const [syncIssue,setSyncIssue]=useState(null); // null | "offline" | "conflict"
+  // Whether the page is far enough down to be worth offering a way back up.
+  const [scrolledDown,setScrolledDown]=useState(false);
   // The same three facts as refs, because refreshFromServer and commitChange both
   // run inside async callbacks that would otherwise read whatever these were when
   // the callback was created, not what they are when it finally runs.
@@ -530,6 +532,25 @@ export default function App(){
     loadSupplierNames().then(setSupplierNames);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The lists run to hundreds of items, so once you're well down one there's a long
+  // way back to the store pills and the search box. The button only appears when
+  // there's something to come back from.
+  useEffect(() => {
+    const onScroll = () => setScrolledDown(window.scrollY > 500);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const backToTop = () => {
+    // Honour a phone set to reduce motion: jump rather than glide.
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    try {
+      window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  };
 
   // Refresh whenever the app comes back into view — switching back from another
   // app/tab, or waking the phone screen — another natural "look before you act" point.
@@ -967,12 +988,15 @@ export default function App(){
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search items..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <div style={s.fRow}>
-              <select style={s.sel} value={filterLoc} onChange={e=>setFilterLoc(e.target.value)}>
-                <option value="All">All Locations</option>
-                {[...(locationsByStore[selectedStore]||[])].sort((a,b)=>a.code-b.code).map(l=><option key={l.name} value={l.name}>{l.code} · {l.name}</option>)}
-              </select>
-              <label style={s.chk}><input type="checkbox" checked={countedOnly} onChange={e=>setCountedOnly(e.target.checked)}/> Counted</label>
-              <button style={s.clearBtn} onClick={clearCounts}>🗑 Clear Counts</button>
+              <div style={s.fGroup}>
+                <label style={s.fl} htmlFor="locFilter">Location filter</label>
+                <select id="locFilter" style={s.sel} value={filterLoc} onChange={e=>setFilterLoc(e.target.value)}>
+                  <option value="All">All Locations</option>
+                  {[...(locationsByStore[selectedStore]||[])].sort((a,b)=>a.code-b.code).map(l=><option key={l.name} value={l.name}>{l.code} · {l.name}</option>)}
+                </select>
+              </div>
+              <label style={{...s.chk,paddingBottom:8}}><input type="checkbox" checked={countedOnly} onChange={e=>setCountedOnly(e.target.checked)}/> Counted</label>
+              <button style={{...s.clearBtn,marginBottom:2}} onClick={clearCounts}>🗑 Clear Counts</button>
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -1034,15 +1058,22 @@ export default function App(){
           <div style={s.toolbar}>
             <input style={s.search} placeholder="🔍 Search..." value={search} onChange={e=>setSearch(e.target.value)}/>
             <div style={s.fRow}>
-              <select style={s.sel} value={filterActive} onChange={e=>setFilterActive(e.target.value)}>
-                <option value="Active">Active</option><option value="All">All</option><option value="Inactive">Inactive</option>
-              </select>
-              <span style={{fontSize:12,color:"#6b7280"}}>Store filter (above): <b>{selectedStore}</b></span>
+              {/* Named, because "Active / All / Inactive" sitting unlabelled next to a
+                  line about the store filter read as if it belonged to the store. */}
+              <div style={s.fGroup}>
+                <label style={s.fl} htmlFor="activeFilter">Active filter</label>
+                <select id="activeFilter" style={s.sel} value={filterActive} onChange={e=>setFilterActive(e.target.value)}>
+                  <option value="Active">Active only</option><option value="All">Active + inactive</option><option value="Inactive">Inactive only</option>
+                </select>
+              </div>
+              <span style={{fontSize:12,color:"#6b7280",paddingBottom:8}}>Store filter (above): <b>{selectedStore}</b></span>
             </div>
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:8,paddingBottom:20}}>
             {filteredManage.map(item=>(
-              <div key={item.id} style={{...s.mCard,opacity:item.active==="No"?0.6:1}}>
+              <div key={item.id} style={{...s.mCard,
+                  ...(editingCell?.itemId===item.id?s.mCardOn:{}),
+                  opacity:item.active==="No"?0.6:1}}>
                 <div style={s.mTop}>
                   <div style={{...s.fg,flex:1}}>
                     <div style={s.fl}>Item Name</div>
@@ -1241,6 +1272,16 @@ export default function App(){
       )}
 
       {/* ── NEW ITEM MODAL ── */}
+      {/* Not while an overlay is up: those scroll inside themselves, so a button
+          that scrolls the page behind them would do nothing visible. */}
+      {scrolledDown&&!newItemDraft&&!poData&&(
+        <button
+          style={{...s.topBtn,bottom:(view==="count"||view==="order")?92:22}}
+          onClick={backToTop}
+          title="Back to top"
+          aria-label="Back to top">↑</button>
+      )}
+
       {newItemDraft&&(
         <div style={s.poOverlay}>
           <div style={s.poOverlayHeader}>
@@ -1354,11 +1395,14 @@ const s={
   navA:{color:"#1a1a2e",borderBottom:"3px solid #1a1a2e",fontWeight:700},
   content:{padding:"10px 10px 0"},
   toolbar:{display:"flex",flexDirection:"column",gap:7,marginBottom:10},
-  fRow:{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"},
+  fRow:{display:"flex",gap:9,flexWrap:"wrap",alignItems:"flex-end"},
+  // A labelled control: the label sits above its box, like the field labels on
+  // the item cards, so a dropdown isn't left to be guessed at from its options.
+  fGroup:{display:"flex",flexDirection:"column",gap:2},
   search:{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #d1d5db",fontSize:16,boxSizing:"border-box"},
   sel:{padding:"7px 10px",borderRadius:8,border:"1px solid #d1d5db",fontSize:13,background:"#fff"},
   chk:{fontSize:13,display:"flex",alignItems:"center",gap:5,cursor:"pointer"},
-  card:{background:"#fff",borderRadius:10,padding:"12px 14px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",border:"1px solid #e5e7eb"},
+  card:{background:"#fff",borderRadius:10,padding:"12px 14px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",border:"1px solid #cbd2dc"},
   iName:{fontSize:15,fontWeight:700,color:"#111827",marginBottom:5},
   inactBadge:{marginLeft:8,background:"#fee2e2",color:"#991b1b",borderRadius:8,padding:"1px 7px",fontSize:10,fontWeight:700},
   metaRow:{display:"flex",flexWrap:"wrap",gap:5,alignItems:"center",marginBottom:8},
@@ -1380,7 +1424,19 @@ const s={
   addBtn:{background:"#1a1a2e",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
   xlsBtn:{background:"#16a34a",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
   importBtn:{background:"#2563eb",color:"#fff",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:600,cursor:"pointer"},
-  mCard:{background:"#fff",borderRadius:10,padding:"10px 12px",border:"1px solid #e5e7eb",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"},
+  // One card, one item. The border carries that, so it has to be visible against
+  // the page — the old #e5e7eb was close enough to the background that a long
+  // scroll read as one continuous sheet.
+  mCard:{background:"#fff",borderRadius:10,padding:"10px 12px",border:"1px solid #cbd2dc",boxShadow:"0 1px 2px rgba(0,0,0,0.04)"},
+  // The one you're working in. A ring rather than a thicker border, so nothing
+  // shifts by a pixel when it comes and goes.
+  mCardOn:{borderColor:"#2563eb",boxShadow:"0 0 0 3px rgba(37,99,235,0.18)"},
+  // Back to top. Sits clear of the Generate Purchase Order bar on the tabs that
+  // have one, and bottom-right everywhere else.
+  topBtn:{position:"fixed",right:14,width:44,height:44,borderRadius:22,border:"1px solid #cbd2dc",
+    background:"#fff",color:"#1a1a2e",fontSize:19,fontWeight:700,cursor:"pointer",zIndex:60,
+    boxShadow:"0 2px 10px rgba(0,0,0,0.18)",display:"flex",alignItems:"center",justifyContent:"center",
+    padding:0,lineHeight:1},
   mTop:{display:"flex",alignItems:"center",gap:8,marginBottom:8},
   mFields:{display:"flex",flexWrap:"wrap",gap:10},
   fg:{display:"flex",flexDirection:"column",gap:2},
