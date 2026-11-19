@@ -262,7 +262,7 @@ function InlineEdit({ value, onSave, type="text", width=160, label }) {
     return (
       <input ref={ref} value={v} type={type==="number"?"number":"text"}
         style={{fontSize:16,padding:"4px 8px",border:"2px solid #3b82f6",borderRadius:6,
-          outline:"none",fontFamily:"inherit",width,boxSizing:"border-box"}}
+          outline:"none",fontFamily:"inherit",width,boxSizing:"border-box",background:"#fff",color:"#1a1a2e"}}
         onChange={e=>setV(e.target.value)}
         onBlur={commit}
         onKeyDown={e=>{ if(e.key==="Enter") commit(); if(e.key==="Escape"){ setV(String(value??"")); setEditing(false); }}}
@@ -1399,8 +1399,10 @@ const s={
   // A labelled control: the label sits above its box, like the field labels on
   // the item cards, so a dropdown isn't left to be guessed at from its options.
   fGroup:{display:"flex",flexDirection:"column",gap:2},
-  search:{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #d1d5db",fontSize:16,boxSizing:"border-box"},
-  sel:{padding:"7px 10px",borderRadius:8,border:"1px solid #d1d5db",fontSize:13,background:"#fff"},
+  search:{width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #d1d5db",fontSize:16,boxSizing:"border-box",background:"#fff",color:"#1a1a2e"},
+  // Text colour stated, not left to the browser: a control that sets its own
+  // background has to set its own foreground, or the two can end up the same.
+  sel:{padding:"7px 10px",borderRadius:8,border:"1px solid #d1d5db",fontSize:13,background:"#fff",color:"#1a1a2e"},
   chk:{fontSize:13,display:"flex",alignItems:"center",gap:5,cursor:"pointer"},
   card:{background:"#fff",borderRadius:10,padding:"12px 14px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",border:"1px solid #cbd2dc"},
   iName:{fontSize:15,fontWeight:700,color:"#111827",marginBottom:5},
@@ -1442,7 +1444,7 @@ const s={
   fg:{display:"flex",flexDirection:"column",gap:2},
   fl:{fontSize:10,fontWeight:700,color:"#9ca3af",textTransform:"uppercase",letterSpacing:0.4},
   ef:{fontSize:13,color:"#111827",cursor:"pointer",borderBottom:"1px dashed #d1d5db",padding:"2px 0",minWidth:30,display:"inline-block"},
-  inlineInput:{fontSize:16,padding:"2px 6px",border:"2px solid #3b82f6",borderRadius:6,outline:"none",fontFamily:"inherit"},
+  inlineInput:{fontSize:16,padding:"2px 6px",border:"2px solid #3b82f6",borderRadius:6,outline:"none",fontFamily:"inherit",background:"#fff",color:"#1a1a2e"},
   otag:{background:"#e5e7eb",color:"#374151",borderRadius:6,padding:"2px 8px",fontSize:12,fontWeight:700,whiteSpace:"nowrap"},
   actBtn:{border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"},
   delBtn:{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:7,padding:"4px 10px",fontSize:13,cursor:"pointer"},

@@ -17,7 +17,14 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  /* This app is light: cream page, white cards, dark navy header, all set in
+     App.jsx. It used to say "light dark", left over from the project template,
+     which told the browser to style anything the app hadn't styled itself for
+     dark mode. On a phone or laptop set to dark that meant every dropdown drew
+     its text in white — on the white background the app had set for it. The
+     Active/Inactive filter, the location filter and every inline picker were
+     white on white, and so unreadable. */
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -30,25 +37,10 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
+/* The dark-mode palette that stood here was for the template's landing page,
+   which this app replaced — there is no #social here and nothing reads these
+   variables but the page frame. Keeping it only flipped the text colour out
+   from under a light app. */
 
 body {
   margin: 0;
